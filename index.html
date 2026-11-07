@@ -1,0 +1,1630 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#262C39">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Carnet de Français</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap');
+
+  :root{
+    --paper:#EDE6D6; --paper-deep:#E3DAC5; --line:#C9BFA6;
+    --ink:#262C39; --ink-soft:#666f80;
+    --rouge:#A63D40; --rouge-deep:#7C2E30;
+    --vert:#5F7D5B; --vert-deep:#3F5A3C;
+    --or:#B6852B; --bleu:#3E5C8A; --card-bg:#FBF8F0;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#1E2230; --paper-deep:#262B3B; --line:#3A4157;
+      --ink:#EDE6D6; --ink-soft:#9AA3B5;
+      --rouge:#D0686B; --rouge-deep:#E08A8C;
+      --vert:#8FB08A; --vert-deep:#A6C7A1;
+      --or:#D9A844; --bleu:#7FA2D6; --card-bg:#2B3042;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#1E2230; --paper-deep:#262B3B; --line:#3A4157;
+    --ink:#EDE6D6; --ink-soft:#9AA3B5;
+    --rouge:#D0686B; --rouge-deep:#E08A8C;
+    --vert:#8FB08A; --vert-deep:#A6C7A1;
+    --or:#D9A844; --bleu:#7FA2D6; --card-bg:#2B3042;
+  }
+  :root[data-theme="light"]{color-scheme:light;}
+  :root[data-theme="dark"]{color-scheme:dark;}
+  body,.card,.panel,.onboard,.opt-section,.lvl,.opt-btn,.footer{transition:background-color .35s ease,color .35s ease,border-color .35s ease;}
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; background:var(--paper);
+    background-image:linear-gradient(var(--line) 1px, transparent 1px);
+    background-size:100% 32px;
+    display:flex; align-items:flex-start; justify-content:center;
+    padding:40px 16px; font-family:'Inter',sans-serif; color:var(--ink);
+    overflow-x:hidden;
+  }
+  button,input,select,textarea{font-family:inherit; color:inherit;}
+  :focus-visible{outline:3px solid var(--bleu); outline-offset:2px;}
+  .notebook{width:100%; max-width:520px; position:relative; padding-left:34px;}
+  .holes{position:absolute; left:0; top:24px; bottom:24px; width:24px;
+    display:flex; flex-direction:column; justify-content:space-between;}
+  .hole{width:14px; height:14px; border-radius:50%; background:var(--paper);
+    box-shadow:inset 0 0 0 1px var(--line), inset 2px 2px 3px rgba(0,0,0,.15);}
+  .sr-only{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;}
+  [hidden]{display:none !important;}
+  /* zona sensible invisible: evita parpadeos cuando el botón se desplaza al hacer hover */
+  .btn,.opt-btn,.lvl,.back-btn,.badge,.icon-btn{position:relative;}
+  .btn::after,.opt-btn::after,.back-btn::after,.badge::after{content:''; position:absolute; inset:-4px;}
+  .lvl::after{content:''; position:absolute; inset:-8px;}
+
+  /* ---------- cabecera ---------- */
+  .header{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding:0 4px; gap:10px;}
+  .header h1{font-family:'Fraunces',serif; font-weight:600; font-size:23px; margin:0;}
+  .hud{display:flex; align-items:center; gap:7px;}
+  .badge{font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:600; padding:5px 10px; border-radius:99px;
+    background:var(--bleu); color:#fff; border:none; cursor:pointer; transition:transform .15s;}
+  .badge:hover{transform:translateY(-2px);}
+  .streak{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--or); display:inline-block;}
+  .streak.bump{animation:bump .45s ease;}
+  .icon-btn{width:36px; height:36px; border-radius:50%; border:1px solid var(--line); background:var(--card-bg);
+    color:var(--ink); font-size:16px; cursor:pointer; transition:transform .3s ease;}
+  .icon-btn:hover{transform:rotate(15deg) scale(1.08);}
+
+  .screen{animation:fadeUp .4s ease both;}
+
+  /* ---------- progreso ---------- */
+  .progress{margin:0 4px 12px;}
+  .progress-top{display:flex; justify-content:space-between; gap:8px; font-family:'JetBrains Mono',monospace;
+    font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;}
+  .bar{position:relative; height:10px; background:var(--paper-deep); border:1px solid var(--line); border-radius:99px; overflow:hidden;}
+  .bar.thin{height:6px;}
+  .bar-fill{height:100%; width:0; border-radius:99px;
+    background:linear-gradient(90deg,var(--vert),var(--or),var(--vert)); background-size:200% 100%;
+    transition:width .7s cubic-bezier(.2,.8,.2,1); animation:shimmer 3s linear infinite;}
+  .bar-goal{position:absolute; top:0; bottom:0; left:80%; width:2px; background:var(--ink-soft); opacity:.5;}
+  .banner{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 4px 12px; padding:8px 12px;
+    background:var(--or); color:#1c1c1c; border-radius:8px; font-size:13px; font-weight:600;}
+
+  /* ---------- tarjeta ---------- */
+  .card{position:relative; background:var(--card-bg); border-radius:6px;
+    box-shadow:0 1px 0 var(--line), 0 14px 28px -14px rgba(0,0,0,.4);
+    overflow:hidden; border:1px solid var(--line);}
+  .card.enter{animation:cardIn .5s cubic-bezier(.2,.8,.2,1.15);}
+  .card.shake{animation:shake .45s ease;}
+  .card.pop{animation:pop .4s ease;}
+  .tab{font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
+    padding:9px 20px; color:#FBF8F0; display:inline-block; border-radius:0 0 6px 0;}
+  .tab.vocab{background:#3F5A3C;} .tab.verb{background:#7C2E30;} .tab.phrase{background:#B6852B;}
+
+  .card-body{padding:30px 24px 24px; text-align:center; min-height:250px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;}
+  .prompt-label{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-soft);
+    text-transform:uppercase; letter-spacing:1px;}
+  .fr-line{display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;}
+  .french-word{font-family:'Fraunces',serif; font-size:30px; font-weight:600; line-height:1.2;}
+  .note{font-size:13px; color:var(--ink-soft); font-style:italic; max-width:340px;}
+  .translation{font-family:'Fraunces',serif; font-style:italic; font-size:24px; color:var(--vert-deep);}
+  .plus{position:absolute; right:22px; top:12px; font-family:'JetBrains Mono',monospace; font-weight:600;
+    color:var(--vert-deep); font-size:18px; pointer-events:none; animation:floatUp .9s ease forwards;}
+  .speak{width:34px; height:34px; border-radius:50%; border:1px solid var(--line); background:var(--paper);
+    cursor:pointer; font-size:15px; transition:transform .15s;}
+  .speak:hover{transform:scale(1.12);}
+
+  /* flip 3D */
+  .flip-scene{perspective:900px; width:100%;}
+  .flip-card{display:grid; transform-style:preserve-3d; transition:transform .65s cubic-bezier(.3,.7,.3,1.15);}
+  .flip-card.flipped{transform:rotateY(180deg);}
+  .face{grid-area:1/1; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; min-height:190px;}
+  .face.back{transform:rotateY(180deg);}
+  .face.back{pointer-events:none; visibility:hidden; transition:visibility 0s .3s;}
+  .flip-card.flipped .face.back{pointer-events:auto; visibility:visible; z-index:1;}
+  .flip-card.flipped .face.front{pointer-events:none; visibility:hidden; transition:visibility 0s .3s;}
+  .flip-card.flipped .flip-hint{animation:none;}
+  .flip-hint{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--ink-soft); margin-top:8px;
+    cursor:pointer; background:var(--paper); border:1px dashed var(--line); border-radius:99px; padding:8px 16px;
+    animation:breathe 2.2s ease-in-out infinite;}
+
+  .options{display:flex; flex-direction:column; gap:8px; width:100%; max-width:350px; margin-top:6px;}
+  .opt-btn{font-size:15px; padding:11px 14px; border:1px solid var(--line); background:var(--paper); color:var(--ink);
+    border-radius:6px; cursor:pointer; text-align:left; transition:transform .15s, border-color .15s;
+    animation:fadeUp .35s ease both; display:flex; align-items:center; gap:10px;}
+  .opt-btn .kb{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-soft); border:1px solid var(--line);
+    border-radius:4px; padding:1px 6px; flex:none;}
+  .opt-btn:hover:not(:disabled){transform:translateX(3px); border-color:var(--ink-soft);}
+  .opt-btn.correct{background:#E4EBDF; border-color:#3F5A3C; color:#3F5A3C; font-weight:600; animation:pop .35s ease;}
+  .opt-btn.wrong{background:#F3E1DF; border-color:#7C2E30; color:#7C2E30; font-weight:600;}
+  .opt-btn:disabled{cursor:default;}
+  .row{display:flex; gap:8px; margin-top:8px; width:100%; max-width:330px;}
+  .row button{flex:1;}
+
+  /* escribir / cloze */
+  .sentence{font-family:'Fraunces',serif; font-size:22px; line-height:1.4; max-width:400px;}
+  .sentence strong{color:var(--vert-deep);}
+  .blank{display:inline-block; min-width:80px; border-bottom:2px solid var(--ink-soft); color:var(--ink-soft);}
+  .blank.ok{color:var(--vert-deep); border-color:var(--vert-deep); font-weight:600;}
+  .blank.bad{color:var(--rouge-deep); border-color:var(--rouge-deep); font-weight:600;}
+  .cue{font-size:13px; color:var(--ink-soft);}
+  .cue b{color:var(--bleu);}
+  .txt{width:100%; max-width:340px; padding:11px 14px; font-size:17px; border:1px solid var(--line); background:var(--paper);
+    border-radius:6px; text-align:center;}
+  .txt:disabled{opacity:.7;}
+  .fb{min-height:22px; font-size:14px; font-weight:600;}
+  .fb.ok{color:var(--vert-deep);} .fb.bad{color:var(--rouge-deep);}
+  .extra{margin-top:6px; display:flex; flex-direction:column; align-items:center; gap:6px; max-width:380px;}
+  .ex-fr{font-family:'Fraunces',serif; font-size:16px; display:flex; align-items:center; gap:8px; justify-content:center; flex-wrap:wrap;}
+  .ex-fr strong{color:var(--vert-deep);}
+  .ex-tr{font-size:13px; color:var(--ink-soft); font-style:italic;}
+
+  .footer{display:flex; align-items:center; justify-content:space-between; padding:14px 20px;
+    border-top:1px dashed var(--line); background:var(--paper-deep); min-height:62px;}
+  .score{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--ink-soft);}
+  .btn{font-weight:600; font-size:14px; padding:10px 18px; border:none; border-radius:6px;
+    background:var(--ink); color:var(--card-bg); cursor:pointer; transition:transform .15s, box-shadow .15s;}
+  .btn:hover:not(:disabled){transform:translateY(-2px); box-shadow:0 6px 12px -6px rgba(0,0,0,.4);}
+  .btn:disabled{opacity:.55; cursor:default;}
+  .btn.sm{padding:6px 12px; font-size:12px;}
+  .btn.good{background:#3F5A3C; color:#FBF8F0;} .btn.bad{background:#7C2E30; color:#FBF8F0;}
+  .btn.ghost{background:transparent; color:var(--ink); border:1px solid var(--line);}
+  .btn.danger{background:transparent; color:var(--rouge-deep); border:1px solid var(--rouge-deep);}
+  .next-btn{visibility:hidden;} .next-btn.show{visibility:visible; animation:fadeUp .25s ease;}
+
+  /* ---------- selectores ---------- */
+  .seg{display:flex; gap:8px; flex-wrap:wrap;}
+  .seg button{flex:1; min-width:90px; padding:10px; font-size:14px; border:1px solid var(--line);
+    background:var(--paper); color:var(--ink); border-radius:6px; cursor:pointer; transition:all .15s;}
+  .seg button:hover{border-color:var(--ink-soft);}
+  .seg button.active{background:var(--ink); color:var(--card-bg); border-color:var(--ink); font-weight:600;}
+  .chips{display:grid; grid-template-columns:repeat(6,1fr); gap:6px;}
+  .chips.four{grid-template-columns:repeat(4,1fr);}
+  .chips button{padding:9px 0; font-family:'JetBrains Mono',monospace; font-size:13px; border:1px solid var(--line);
+    background:var(--card-bg); color:var(--ink); border-radius:6px; cursor:pointer; transition:all .15s;}
+  .chips button.active{background:var(--bleu); color:#fff; border-color:var(--bleu);}
+
+  /* ---------- onboarding / test ---------- */
+  .onboard{background:var(--card-bg); border:1px solid var(--line); border-radius:6px; padding:24px 20px;
+    box-shadow:0 14px 28px -14px rgba(0,0,0,.4);}
+  .onboard h2{font-family:'Fraunces',serif; font-size:26px; margin:18px 0 6px;}
+  .onboard p{margin:0 0 16px; color:var(--ink-soft); font-size:14px;}
+  .or{text-align:center; font-size:12px; color:var(--ink-soft); margin:14px 0; font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:1px;}
+  .lvl-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .lvl{text-align:left; padding:14px; border:1px solid var(--line); border-radius:8px; background:var(--paper);
+    color:var(--ink); cursor:pointer; transition:transform .18s, box-shadow .18s, border-color .18s;
+    animation:fadeUp .4s ease both;}
+  .lvl:hover{transform:translateY(-3px) rotate(-.5deg); box-shadow:0 10px 18px -10px rgba(0,0,0,.4); border-color:var(--bleu);}
+  .lvl b{display:block; font-family:'Fraunces',serif; font-size:24px; color:var(--bleu);}
+  .lvl span{display:block; font-weight:600; font-size:14px; margin-top:2px;}
+  .lvl small{display:block; color:var(--ink-soft); font-size:12px; margin-top:4px;}
+  .test-top{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px;}
+  .test-body{min-height:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; text-align:center;}
+  .bigtxt{font-family:'Fraunces',serif; font-size:72px; font-weight:600; color:var(--bleu); line-height:1;}
+
+  /* ---------- paneles (opciones, stats, cartas) ---------- */
+  .panel{background:var(--card-bg); border:1px solid var(--line); border-radius:6px; overflow:hidden;
+    box-shadow:0 14px 28px -14px rgba(0,0,0,.4); animation:slideIn .4s cubic-bezier(.2,.8,.2,1) both;}
+  .panel-head{display:flex; align-items:center; gap:12px; padding:16px 18px; background:var(--ink); color:var(--card-bg);}
+  .panel-head h2{font-family:'Fraunces',serif; font-size:20px; margin:0;}
+  .back-btn{background:transparent; border:1px solid currentColor; color:inherit; border-radius:99px;
+    padding:6px 12px; font-size:13px; cursor:pointer; transition:transform .15s;}
+  .back-btn:hover{transform:translateX(-3px);}
+  .panel-body{padding:18px; display:flex; flex-direction:column; gap:14px;}
+  .opt-section{border:1px solid var(--line); border-radius:8px; padding:16px; background:var(--paper);
+    animation:fadeUp .4s ease both;}
+  .opt-section h3{font-family:'Fraunces',serif; font-size:16px; margin:0 0 2px;}
+  .opt-section p{margin:0 0 12px; font-size:13px; color:var(--ink-soft);}
+  .opt-section .stack{display:flex; flex-direction:column; gap:8px;}
+  .check{display:flex; align-items:center; gap:10px; font-size:15px; padding:5px 0; cursor:pointer;}
+  .check input{width:18px; height:18px; accent-color:var(--vert);}
+  .field{display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--ink-soft);}
+  .field input,.field select,.field textarea{padding:9px 10px; font-size:15px; border:1px solid var(--line); background:var(--card-bg); border-radius:6px; color:var(--ink);}
+  .field textarea{min-height:90px; resize:vertical;}
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .msg{font-size:13px; font-weight:600; min-height:18px;}
+  .msg.ok{color:var(--vert-deep);} .msg.bad{color:var(--rouge-deep);}
+
+  .kpis{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
+  .kpi{background:var(--card-bg); border:1px solid var(--line); border-radius:8px; padding:10px; text-align:center;}
+  .kpi b{display:block; font-family:'Fraunces',serif; font-size:22px;}
+  .kpi span{font-size:11px; color:var(--ink-soft);}
+  .lrow{display:grid; grid-template-columns:34px 1fr 54px; align-items:center; gap:8px; font-size:12px; margin:6px 0; font-family:'JetBrains Mono',monospace;}
+  .bars{display:flex; align-items:flex-end; gap:4px; height:70px;}
+  .bars div{flex:1; background:var(--bleu); border-radius:3px 3px 0 0; min-height:2px; opacity:.85;}
+  .bars div.zero{background:var(--line);}
+  .list{display:flex; flex-direction:column; gap:6px;}
+  .item{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; background:var(--card-bg);
+    border:1px solid var(--line); border-radius:6px; font-size:14px;}
+  .item small{color:var(--ink-soft); display:block;}
+
+  /* ---------- modales ---------- */
+  .overlay{position:fixed; inset:0; background:rgba(20,22,30,.55); display:flex; align-items:center; justify-content:center;
+    padding:16px; z-index:10; animation:fadeIn .25s ease;}
+  .modal{position:relative; z-index:2; background:var(--card-bg); border-radius:12px; padding:28px 24px; text-align:center;
+    max-width:380px; width:100%; max-height:92vh; overflow:auto; animation:popIn .55s cubic-bezier(.2,.8,.2,1.4) both;}
+  .modal .big{font-family:'Fraunces',serif; font-size:64px; font-weight:600; color:var(--bleu); line-height:1;
+    animation:pulse 1.4s ease-in-out infinite;}
+  .modal h2{font-family:'Fraunces',serif; margin:14px 0 4px;}
+  .modal p{color:var(--ink-soft); margin:0 0 20px;}
+  .conj-tabs{display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin:10px 0;}
+  .conj-tabs button{padding:6px 10px; font-size:12px; border:1px solid var(--line); background:var(--paper); border-radius:99px; cursor:pointer; color:var(--ink);}
+  .conj-tabs button.active{background:var(--bleu); color:#fff; border-color:var(--bleu);}
+  .conj-table{width:100%; border-collapse:collapse; margin:6px 0 10px; font-size:16px;}
+  .conj-table td{padding:6px 8px; border-bottom:1px dashed var(--line); text-align:left; font-family:'Fraunces',serif;}
+  .conj-table td:first-child{color:var(--ink-soft); width:34%; font-family:'JetBrains Mono',monospace; font-size:12px;}
+  .small{font-size:12px; color:var(--ink-soft); margin:0 0 14px;}
+  .confetti{position:fixed; top:-12px; width:9px; height:14px; z-index:1; border-radius:2px; animation:fall linear forwards;}
+  .toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:var(--ink); color:var(--card-bg);
+    padding:12px 18px; border-radius:99px; font-weight:600; font-size:14px; z-index:20; animation:fadeUp .3s ease;}
+
+  /* ---------- animaciones ---------- */
+  @keyframes fadeUp{from{opacity:0; transform:translateY(12px);} to{opacity:1; transform:none;}}
+  @keyframes fadeIn{from{opacity:0;} to{opacity:1;}}
+  @keyframes slideIn{from{opacity:0; transform:translateX(40px);} to{opacity:1; transform:none;}}
+  @keyframes cardIn{from{opacity:0; transform:translateX(50px) rotate(3deg);} to{opacity:1; transform:none;}}
+  @keyframes shake{20%,60%{transform:translateX(-7px);} 40%,80%{transform:translateX(7px);}}
+  @keyframes pop{50%{transform:scale(1.04);}}
+  @keyframes popIn{from{opacity:0; transform:scale(.6);} to{opacity:1; transform:none;}}
+  @keyframes floatUp{from{opacity:1; transform:translateY(0);} to{opacity:0; transform:translateY(-34px);}}
+  @keyframes bump{40%{transform:scale(1.45) rotate(-8deg);}}
+  @keyframes breathe{50%{transform:scale(1.05);}}
+  @keyframes pulse{50%{transform:scale(1.08);}}
+  @keyframes shimmer{to{background-position:-200% 0;}}
+  @keyframes fall{to{transform:translateY(110vh) rotate(720deg);}}
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important;}
+  }
+  @media (max-width:440px){
+    body{padding:24px 10px;}
+    .lvl-grid{grid-template-columns:1fr;}
+    .chips{grid-template-columns:repeat(3,1fr);}
+    .french-word{font-size:26px;}
+    .two{grid-template-columns:1fr;}
+    .header h1{font-size:19px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="notebook">
+  <div class="holes">
+    <div class="hole"></div><div class="hole"></div><div class="hole"></div>
+    <div class="hole"></div><div class="hole"></div><div class="hole"></div><div class="hole"></div>
+  </div>
+
+  <div class="header">
+    <h1>Carnet de Français</h1>
+    <div class="hud" id="hud">
+      <button class="badge" id="levelBadge" type="button"></button>
+      <span class="streak" id="streakWrap" title="">🔥 <span id="streak">0</span></span>
+      <button class="icon-btn" id="statsBtn" type="button">📊</button>
+      <button class="icon-btn" id="gearBtn" type="button">⚙</button>
+    </div>
+  </div>
+
+  <!-- Elegir nivel (primera vez) -->
+  <section id="screenOnboard" class="screen" hidden>
+    <div class="onboard">
+      <div class="seg" id="onboardLang"></div>
+      <h2 id="onboardTitle"></h2>
+      <p id="onboardSub"></p>
+      <button class="btn" id="onboardTest" type="button" style="width:100%"></button>
+      <div class="or" id="onboardOr"></div>
+      <div class="lvl-grid" id="lvlGrid"></div>
+    </div>
+  </section>
+
+  <!-- Test de nivel -->
+  <section id="screenTest" class="screen" hidden>
+    <div class="onboard">
+      <div class="test-top">
+        <span class="progress-top" style="margin:0" id="testLabel"></span>
+        <button class="btn ghost sm" id="testCancel" type="button"></button>
+      </div>
+      <div class="test-body" id="testHost"></div>
+      <div class="row" style="max-width:none;justify-content:flex-end">
+        <button class="btn next-btn" id="testNext" type="button" style="flex:none"></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Estudiar -->
+  <section id="screenStudy" class="screen" hidden>
+    <div class="banner" id="hardBanner" hidden><span id="hardText"></span><button class="btn ghost sm" id="hardExit" type="button"></button></div>
+    <div class="progress">
+      <div class="progress-top"><span id="progLabel"></span><span id="progCount"></span></div>
+      <div class="bar"><div class="bar-fill" id="barFill"></div><div class="bar-goal"></div></div>
+      <div class="progress-top" style="margin-top:10px"><span id="goalLabel"></span><span id="goalCount"></span></div>
+      <div class="bar thin"><div class="bar-fill" id="goalFill"></div></div>
+    </div>
+    <div class="card" id="card">
+      <span class="tab" id="tab"></span>
+      <div class="card-body" id="cardBody"></div>
+      <div class="footer">
+        <div class="score" id="score"></div>
+        <button class="btn next-btn" id="nextBtn" type="button"></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Opciones -->
+  <section id="screenOptions" class="screen" hidden>
+    <div class="panel">
+      <div class="panel-head"><button class="back-btn" id="backOpt" type="button"></button><h2 id="optTitle"></h2></div>
+      <div class="panel-body" id="optBody"></div>
+    </div>
+  </section>
+
+  <!-- Estadísticas -->
+  <section id="screenStats" class="screen" hidden>
+    <div class="panel">
+      <div class="panel-head"><button class="back-btn" id="backStats" type="button"></button><h2 id="statsTitle"></h2></div>
+      <div class="panel-body" id="statsBody"></div>
+    </div>
+  </section>
+
+  <!-- Mis cartas -->
+  <section id="screenCards" class="screen" hidden>
+    <div class="panel">
+      <div class="panel-head"><button class="back-btn" id="backCards" type="button"></button><h2 id="cardsTitle"></h2></div>
+      <div class="panel-body" id="cardsBody"></div>
+    </div>
+  </section>
+</div>
+
+<div class="overlay" id="levelUp" role="dialog" aria-modal="true" aria-labelledby="luTitle" hidden>
+  <div class="modal">
+    <div class="big" id="luBig"></div>
+    <h2 id="luTitle"></h2>
+    <p id="luText"></p>
+    <button class="btn" id="luBtn" type="button"></button>
+  </div>
+</div>
+
+<div class="overlay" id="conjModal" role="dialog" aria-modal="true" aria-labelledby="conjTitle" hidden>
+  <div class="modal">
+    <h2 id="conjTitle" style="margin-top:0"></h2>
+    <div class="conj-tabs" id="conjTabs"></div>
+    <table class="conj-table" id="conjTable"></table>
+    <p class="small" id="conjNote"></p>
+    <button class="btn" id="conjClose" type="button"></button>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+<div class="sr-only" id="sr" aria-live="polite" role="status"></div>
+
+<script>
+/* ===================================================================
+   UTILIDADES
+   =================================================================== */
+const $ = id => document.getElementById(id);
+function el(tag, cls, text){
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+function shuffle(arr){
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+const rand = a => a[Math.floor(Math.random() * a.length)];
+function weighted(list, wf){
+  const w = list.map(wf);
+  let r = Math.random() * w.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < list.length; i++){ r -= w[i]; if (r <= 0) return list[i]; }
+  return list[list.length - 1];
+}
+const announce = msg => { $('sr').textContent = ''; setTimeout(() => { $('sr').textContent = msg; }, 30); };
+let toastTimer = null;
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2600);
+}
+
+/* ===================================================================
+   TEXTOS (catalán · español · inglés)
+   =================================================================== */
+const LANGNAME = {ca:'Català', es:'Español', en:'English'};
+const STR = {};
+const S = (k, ca, es, en) => { STR[k] = {ca, es, en}; };
+const t = (k, v) => {
+  let s = (STR[k] || {})[state.lang];
+  if (s === undefined) s = k;
+  if (v) for (const x in v) s = s.split('{' + x + '}').join(v[x]);
+  return s;
+};
+
+S('options','Opcions','Opciones','Options');
+S('back','← Tornar','← Volver','← Back');
+S('stats','Estadístiques','Estadísticas','Statistics');
+S('q_translate','Tradueix','Traduce','Translate');
+S('choose_fr2l1','Tria la traducció','Elige la traducción','Choose the translation');
+S('choose_l12fr','Tria la paraula en francès','Elige la palabra en francés','Pick the French word');
+S('type_prompt','Escriu-ho en francès','Escríbelo en francés','Write it in French');
+S('cloze_prompt','Completa la frase','Completa la frase','Complete the sentence');
+S('cue','Pista','Pista','Hint');
+S('reveal','toca per girar la carta','toca para girar la carta','tap to flip the card');
+S('knew','Ho sabia','Lo sabía','I knew it');
+S('didnt','No ho sabia','No lo sabía','I didn’t');
+S('next','Següent →','Siguiente →','Next →');
+S('check','Comprovar','Comprobar','Check');
+S('dontknow','Ni idea','Ni idea','No idea');
+S('placeholder','Escriu aquí…','Escribe aquí…','Type here…');
+S('ok_right','✓ Correcte!','✓ ¡Correcto!','✓ Correct!');
+S('ok_accent','✓ Correcte, però amb accents: {w}','✓ Correcto, pero con acentos: {w}','✓ Correct, but mind the accents: {w}');
+S('almost','Gairebé! Era: {w}','¡Casi! Era: {w}','Almost! It was: {w}');
+S('wrong','Era: {w}','Era: {w}','It was: {w}');
+S('speak','Escoltar','Escuchar','Listen');
+S('conj','📖 Conjugació','📖 Conjugación','📖 Conjugation');
+S('conj_title','Conjugació: {v}','Conjugación: {v}','Conjugation: {v}');
+S('conj_etre','Amb être el participi concorda en gènere i nombre.','Con être el participio concuerda en género y número.','With être the participle agrees in gender and number.');
+S('close','Tancar','Cerrar','Close');
+S('score','Encerts','Aciertos','Correct');
+S('streak_short','ratxa','racha','streak');
+S('mastered','dominades','dominadas','mastered');
+S('level','Nivell','Nivel','Level');
+S('today','Avui','Hoy','Today');
+S('daystreak','dies seguits','días seguidos','day streak');
+S('goal_hit','🎉 Objectiu diari complert!','🎉 ¡Objetivo diario cumplido!','🎉 Daily goal reached!');
+S('hard_mode','Repàs de paraules difícils','Repaso de palabras difíciles','Reviewing difficult words');
+S('exit','Sortir','Salir','Exit');
+S('no_cards','No hi ha cartes per practicar.','No hay cartas para practicar.','No cards to practise.');
+S('cat_vocab','Vocabulari','Vocabulario','Vocabulary');
+S('cat_verb','Verbs','Verbos','Verbs');
+S('cat_phrase','Frases','Frases','Phrases');
+S('nounM','Nom masculí','Nombre masculino','Masculine noun');
+S('nounF','Nom femení','Nombre femenino','Feminine noun');
+S('tn_pres','present','presente','present');
+S('tn_pc','passé composé','passé composé','passé composé');
+S('tn_imp','imperfet','imperfecto','imperfect');
+S('tn_fut','futur simple','futuro simple','simple future');
+S('tn_cond','condicional','condicional','conditional');
+S('tn_condp','condicional passat','condicional compuesto','past conditional');
+S('tn_subj','subjuntiu','subjuntivo','subjunctive');
+S('tn_futant','futur anterior','futuro anterior','future perfect');
+S('tn_ps','passé simple','passé simple','passé simple');
+S('tn_subjimp','subjuntiu imperfet','subjuntivo imperfecto','imperfect subjunctive');
+S('tn_subjpqp','subjuntiu plusquamperfet','subjuntivo pluscuamperfecto','pluperfect subjunctive');
+['Principiant|Principiante|Beginner','Elemental|Elemental|Elementary','Intermedi|Intermedio|Intermediate',
+ 'Intermedi alt|Intermedio alto|Upper intermediate','Avançat|Avanzado|Advanced','Domini|Maestría|Proficiency']
+  .forEach((s, i) => { const [a, b, c] = s.split('|'); S('lvl' + i, a, b, c); });
+['Primeres paraules i salutacions|Primeras palabras y saludos|First words and greetings',
+ 'Situacions quotidianes|Situaciones cotidianas|Everyday situations',
+ 'Feina, plans i opinions|Trabajo, planes y opiniones|Work, plans and opinions',
+ 'Debats i expressions idiomàtiques|Debates y expresiones idiomáticas|Debates and idioms',
+ 'Llenguatge precís i matisat|Lenguaje preciso y matizado|Precise, nuanced language',
+ 'Registre literari i culte|Registro literario y culto|Literary and formal register']
+  .forEach((s, i) => { const [a, b, c] = s.split('|'); S('lvd' + i, a, b, c); });
+S('onb_title','Quin nivell de francès tens?','¿Qué nivel de francés tienes?',"What's your French level?");
+S('onb_sub','Segons el MECR. Pujaràs de nivell quan dominis el 80% de les cartes.','Según el MCER. Subirás de nivel cuando domines el 80% de las cartas.','Based on the CEFR. You level up once you master 80% of the cards.');
+S('onb_test','Fer el test de nivell (≈ 2 min)','Hacer el test de nivel (≈ 2 min)','Take the placement test (≈ 2 min)');
+S('onb_or','o tria directament','o elige directamente','or pick directly');
+S('test_q','Pregunta {n}','Pregunta {n}','Question {n}');
+S('test_result','El teu nivell de partida','Tu nivel de partida','Your starting level');
+S('test_start','Començar al {l}','Empezar en {l}','Start at {l}');
+S('test_other','Triar un altre nivell','Elegir otro nivel','Pick another level');
+S('cancel','Cancel·lar','Cancelar','Cancel');
+S('levelUp','Has pujat de nivell!','¡Has subido de nivel!','Level up!');
+S('maxTitle','Has dominat el C2!','¡Has dominado el C2!',"You've mastered C2!");
+S('maxText','Ja ets al nivell màxim. Bravo !','Ya estás en el nivel máximo. Bravo !',"You're at the top level. Bravo !");
+S('continue','Continuar','Continuar','Continue');
+
+S('opt_theme','Aspecte','Apariencia','Appearance');
+S('opt_theme_h','Clar, fosc o segons el teu dispositiu.','Claro, oscuro o según tu dispositivo.','Light, dark or follow your device.');
+S('theme_auto','Automàtic','Automático','Auto');
+S('theme_light','☀ Clar','☀ Claro','☀ Light');
+S('theme_dark','☾ Fosc','☾ Oscuro','☾ Dark');
+S('opt_lang','Llengua vehicular','Idioma vehicular','Language');
+S('opt_lang_h','Llengua de les traduccions i de la interfície.','Idioma de las traducciones y de la interfaz.','Language for translations and the interface.');
+S('opt_level','Nivell MECR','Nivel MCER','CEFR level');
+S('opt_level_h','Pots canviar-lo quan vulguis; el progrés es manté.','Puedes cambiarlo cuando quieras; el progreso se mantiene.','Change it any time; your progress is kept.');
+S('opt_level_test','Fer el test de nivell','Hacer el test de nivel','Take the placement test');
+S('opt_dir','Direcció de pràctica','Dirección de práctica','Practice direction');
+S('opt_dir_h','Recomanat: mixt. Comença reconeixent i acaba escrivint.','Recomendado: mixto. Empiezas reconociendo y acabas escribiendo.','Recommended: mixed. You start by recognising and end up typing.');
+S('dir_fr2l1','FR → {l}','FR → {l}','FR → {l}');
+S('dir_l12fr','{l} → FR','{l} → FR','{l} → FR');
+S('dir_mixed','Mixt','Mixto','Mixed');
+S('opt_cats','Què vols practicar','Qué quieres practicar','What to practise');
+S('opt_cats_h','Com a mínim una categoria.','Mínimo una categoría.','At least one category.');
+S('opt_sound','Pronunciació','Pronunciación','Pronunciation');
+S('opt_sound_auto','Reproduir la veu automàticament','Reproducir la voz automáticamente','Play the voice automatically');
+S('opt_sound_none','El teu navegador no admet síntesi de veu.','Tu navegador no admite síntesis de voz.','Your browser has no speech synthesis.');
+S('opt_goal','Objectiu diari','Objetivo diario','Daily goal');
+S('opt_goal_h','Respostes per dia.','Respuestas por día.','Answers per day.');
+S('opt_mycards','Les meves cartes','Mis cartas','My cards');
+S('opt_mycards_h','Afegeix paraules pròpies o importa-les en CSV.','Añade tus propias palabras o impórtalas en CSV.','Add your own words or import them as CSV.');
+S('opt_mycards_btn','Gestionar cartes','Gestionar cartas','Manage cards');
+S('opt_reset','Començar de zero','Empezar de cero','Start over');
+S('opt_reset_h','Esborra el progrés i les estadístiques (les teves cartes es mantenen).','Borra el progreso y las estadísticas (tus cartas se mantienen).','Erases progress and statistics (your cards are kept).');
+S('reset','Reiniciar progrés','Reiniciar progreso','Reset progress');
+S('reset_confirm','Segur que vols esborrar tot el progrés?','¿Seguro que quieres borrar todo el progreso?','Are you sure you want to erase all progress?');
+
+S('st_today','Avui','Hoy','Today');
+S('st_streak','Dies seguits','Días seguidos','Day streak');
+S('st_acc','Precisió','Precisión','Accuracy');
+S('st_total','Respostes','Respuestas','Answers');
+S('st_seen','Cartes vistes','Cartas vistas','Cards seen');
+S('st_mastered','Dominades','Dominadas','Mastered');
+S('st_levels','Per nivell','Por nivel','By level');
+S('st_last','Últims 14 dies','Últimos 14 días','Last 14 days');
+S('st_hard','Paraules difícils','Palabras difíciles','Difficult words');
+S('st_hard_empty','Encara no tens errors. Bon senyal!','Aún no tienes fallos. ¡Buena señal!','No mistakes yet. Good sign!');
+S('st_practice','Practicar difícils','Practicar difíciles','Practise difficult words');
+S('st_wrong','{n} errors','{n} fallos','{n} mistakes');
+
+S('cards_title','Les meves cartes','Mis cartas','My cards');
+S('cards_add','Afegir una carta','Añadir una carta','Add a card');
+S('f_level','Nivell','Nivel','Level');
+S('f_cat','Categoria','Categoría','Category');
+S('f_fr','Francès','Francés','French');
+S('f_tr','Traducció ({l})','Traducción ({l})','Translation ({l})');
+S('f_note','Nota (opcional)','Nota (opcional)','Note (optional)');
+S('f_ex','Frase amb [paraula] (opcional)','Frase con [palabra] (opcional)','Sentence with [word] (optional)');
+S('f_extr','Traducció de la frase (opcional)','Traducción de la frase (opcional)','Sentence translation (optional)');
+S('f_add','Afegir','Añadir','Add');
+S('f_exists','Aquesta carta ja existeix al mazo base.','Esta carta ya existe en el mazo base.','This card already exists in the base deck.');
+S('f_empty','Falten el francès i la traducció.','Faltan el francés y la traducción.','French and translation are required.');
+S('f_added','Carta afegida ✓','Carta añadida ✓','Card added ✓');
+S('cards_list','Cartes afegides ({n})','Cartas añadidas ({n})','Added cards ({n})');
+S('cards_none','Encara no n’has afegit cap.','Aún no has añadido ninguna.','You have not added any yet.');
+S('delete','Esborrar','Borrar','Delete');
+S('csv_title','Importar / exportar CSV','Importar / exportar CSV','Import / export CSV');
+S('csv_help','Columnes: idioma, nivell, categoria, francès, traducció, nota, frase, traducció de la frase.','Columnas: idioma, nivel, categoría, francés, traducción, nota, frase, traducción de la frase.','Columns: language, level, category, French, translation, note, sentence, sentence translation.');
+S('csv_export','Exportar CSV','Exportar CSV','Export CSV');
+S('csv_import','Importar','Importar','Import');
+S('csv_paste','Enganxa aquí el CSV…','Pega aquí el CSV…','Paste the CSV here…');
+S('csv_done','Importades {n} cartes ✓','Importadas {n} cartas ✓','Imported {n} cards ✓');
+S('csv_err','No s’ha pogut importar res.','No se ha podido importar nada.','Nothing could be imported.');
+
+/* ===================================================================
+   MAZO BASE por nivel MCER (0=A1 … 5=C2)
+   Vocabulario: V(nivel, fr, género, ca, es, en, [ejemplo fr, ca, es, en])
+   Verbos:      B(nivel, fr, infinitivo, tiempo, ca, es, en, [ejemplo…])
+   Frases:      P(nivel, fr, ca, es, en, nota)
+   En los ejemplos la palabra objetivo va entre [corchetes] (para el modo "completa").
+   =================================================================== */
+const LEVELS = ['A1','A2','B1','B2','C1','C2'];
+const CATS = ['vocab','verb','phrase'];
+const BASE = [];
+const exo = a => a ? {f:a[0], t:{ca:a[1], es:a[2], en:a[3]}} : null;
+const V = (l,fr,g,ca,es,en,ex) => BASE.push({lvl:l, cat:'vocab', fr, g, t:{ca,es,en}, ex:exo(ex)});
+const B = (l,fr,inf,tn,ca,es,en,ex) => BASE.push({lvl:l, cat:'verb', fr, inf, tn, t:{ca,es,en}, ex:exo(ex)});
+const P = (l,fr,ca,es,en,n) => BASE.push({lvl:l, cat:'phrase', fr, t:{ca,es,en}, n, ex:null});
+const N = (ca,es,en) => ({ca,es,en});
+const IDIOM = N('Expressió idiomàtica','Expresión idiomática','Idiom');
+
+// ---- A1
+V(0,'le chat','m','el gat','el gato','the cat',["Le [chat] dort sur le canapé.","El gat dorm al sofà.","El gato duerme en el sofá.","The cat sleeps on the sofa."]);
+V(0,'la maison','f','la casa','la casa','the house',["Ma [maison] est près de la gare.","La meva casa és a prop de l'estació.","Mi casa está cerca de la estación.","My house is near the station."]);
+V(0,'le pain','m','el pa','el pan','the bread',["Je mange du [pain] au petit-déjeuner.","Menjo pa a l'esmorzar.","Como pan en el desayuno.","I eat bread at breakfast."]);
+V(0,"l'eau",'f',"l'aigua",'el agua','the water',["Je bois de l'[eau] avec le repas.","Bec aigua amb el menjar.","Bebo agua con la comida.","I drink water with my meal."]);
+V(0,'le livre','m','el llibre','el libro','the book',["Ce [livre] est très intéressant.","Aquest llibre és molt interessant.","Este libro es muy interesante.","This book is very interesting."]);
+V(0,'la nuit','f','la nit','la noche','the night',["La [nuit], il fait froid.","De nit fa fred.","De noche hace frío.","At night it is cold."]);
+V(0,'le jour','m','el dia','el día','the day',["Quel [jour] sommes-nous ?","Quin dia és avui?","¿Qué día es hoy?","What day is it?"]);
+B(0,'je suis','être','pres','sóc','soy','I am',["Aujourd'hui, je [suis] fatigué.","Avui estic cansat.","Hoy estoy cansado.","Today I am tired."]);
+B(0,'tu as','avoir','pres','tens','tienes','you have',["Tu [as] une sœur ?","Tens una germana?","¿Tienes una hermana?","Do you have a sister?"]);
+B(0,'il va','aller','pres','ell va','él va','he goes',["Il [va] à l'école à pied.","Va a l'escola a peu.","Va a la escuela a pie.","He walks to school."]);
+B(0,'nous parlons','parler','pres','parlem','hablamos','we speak',["Nous [parlons] français en classe.","Parlem francès a classe.","Hablamos francés en clase.","We speak French in class."]);
+B(0,'je finis','finir','pres','acabo','termino','I finish',["Je [finis] mon travail à six heures.","Acabo la feina a les sis.","Termino mi trabajo a las seis.","I finish my work at six."]);
+P(0,'ça va ?','com va?','¿qué tal?','how are you?',N('Salutació','Saludo','Greeting'));
+P(0,"s'il te plaît",'si us plau','por favor','please',N('Informal (tu)','Informal (tú)','Informal (tu)'));
+P(0,'merci beaucoup','moltes gràcies','muchas gracias','thank you very much',N('Agrair','Agradecer','Thanking'));
+P(0,"à tout à l'heure",'fins ara','hasta luego','see you later',N('Comiat, en unes hores','Despedida, en unas horas','Farewell, within hours'));
+
+// ---- A2
+V(1,'la fenêtre','f','la finestra','la ventana','the window',["Ouvre la [fenêtre], s'il te plaît.","Obre la finestra, si us plau.","Abre la ventana, por favor.","Open the window, please."]);
+V(1,'la clé','f','la clau','la llave','the key',["J'ai perdu ma [clé].","He perdut la meva clau.","He perdido mi llave.","I lost my key."]);
+V(1,'le ciel','m','el cel','el cielo','the sky',["Le [ciel] est bleu aujourd'hui.","El cel és blau avui.","El cielo está azul hoy.","The sky is blue today."]);
+V(1,'le travail','m','la feina','el trabajo','the work / job',["Mon [travail] commence à huit heures.","La meva feina comença a les vuit.","Mi trabajo empieza a las ocho.","My work starts at eight."]);
+V(1,'la gare','f',"l'estació de tren",'la estación de tren','the train station',["La [gare] est à dix minutes.","L'estació és a deu minuts.","La estación está a diez minutos.","The station is ten minutes away."]);
+V(1,'le marché','m','el mercat','el mercado','the market',["Je fais mes courses au [marché].","Faig la compra al mercat.","Hago la compra en el mercado.","I do my shopping at the market."]);
+V(1,'la semaine','f','la setmana','la semana','the week',["Je travaille toute la [semaine].","Treballo tota la setmana.","Trabajo toda la semana.","I work all week."]);
+B(1,'vous faites','faire','pres','feu (vosaltres)','hacéis','you (pl.) do / make',["Qu'est-ce que vous [faites] ce soir ?","Què feu aquest vespre?","¿Qué hacéis esta noche?","What are you doing tonight?"]);
+B(1,'ils peuvent','pouvoir','pres','ells poden','ellos pueden','they can',["Ils [peuvent] venir demain.","Poden venir demà.","Pueden venir mañana.","They can come tomorrow."]);
+B(1,'elle veut','vouloir','pres','ella vol','ella quiere','she wants',["Elle [veut] un café.","Vol un cafè.","Quiere un café.","She wants a coffee."]);
+B(1,'nous prenons','prendre','pres','prenem','tomamos','we take',["Nous [prenons] le train à midi.","Agafem el tren al migdia.","Cogemos el tren a mediodía.","We take the train at noon."]);
+B(1,"j'ai mangé",'manger','pc','he menjat','he comido','I ate / I have eaten',["Hier, j'[ai mangé] au restaurant.","Ahir vaig menjar al restaurant.","Ayer comí en el restaurante.","Yesterday I ate at the restaurant."]);
+P(1,'ça marche',"d'acord / vinga",'vale / de acuerdo','that works / okay',N('Acord informal','Acuerdo informal','Informal agreement'));
+P(1,'ça ne fait rien','no fa res','no pasa nada',"it doesn't matter",N('Per treure importància','Para quitar importancia','Reassurance'));
+P(1,"qu'est-ce que c'est ?",'què és això?','¿qué es esto?','what is this?',N('Pregunta habitual','Pregunta habitual','Common question'));
+P(1,'je voudrais un café','voldria un cafè','querría un café',"I'd like a coffee",N('Condicional de cortesia','Condicional de cortesía','Polite conditional'));
+P(1,'quoi de neuf ?','què hi ha de nou?','¿qué hay de nuevo?',"what's new?",N('Salutació informal','Saludo informal','Casual greeting'));
+
+// ---- B1
+V(2,'le mensonge','m','la mentida','la mentira','the lie',["Je déteste le [mensonge].","Detesto la mentida.","Detesto la mentira.","I hate lying."]);
+V(2,'le souvenir','m','el record','el recuerdo','the memory',["Ce voyage reste un beau [souvenir].","Aquell viatge continua sent un bon record.","Ese viaje sigue siendo un buen recuerdo.","That trip remains a fond memory."]);
+V(2,'la réunion','f','la reunió','la reunión','the meeting',["La [réunion] a lieu à dix heures.","La reunió és a les deu.","La reunión es a las diez.","The meeting is at ten o'clock."]);
+V(2,'le chômage','m',"l'atur",'el paro','unemployment',["Le [chômage] augmente dans la région.","L'atur augmenta a la regió.","El paro aumenta en la región.","Unemployment is rising in the region."]);
+V(2,'la santé','f','la salut','la salud','health',["La [santé] est plus importante que l'argent.","La salut és més important que els diners.","La salud es más importante que el dinero.","Health is more important than money."]);
+V(2,"l'avenir",'m','el futur','el futuro','the future',["Je pense souvent à l'[avenir].","Penso sovint en el futur.","Pienso a menudo en el futuro.","I often think about the future."]);
+B(2,'il faut','falloir','pres','cal','hace falta','it is necessary',["Il [faut] partir avant la nuit.","Cal marxar abans que es faci de nit.","Hay que irse antes de que anochezca.","We must leave before nightfall."]);
+B(2,'je devrais','devoir','cond','hauria de','debería','I should',["Je [devrais] dormir davantage.","Hauria de dormir més.","Debería dormir más.","I should sleep more."]);
+B(2,'nous étions','être','imp','érem','éramos','we were',["Quand nous [étions] petits, nous jouions dehors.","Quan érem petits, jugàvem al carrer.","Cuando éramos pequeños, jugábamos fuera.","When we were little, we played outside."]);
+B(2,'ils sont partis','partir','pc','han marxat','se han ido','they have left',["Ils [sont partis] sans rien dire.","Han marxat sense dir res.","Se han ido sin decir nada.","They left without saying anything."]);
+P(2,"je n'en sais rien",'no en tinc ni idea','no tengo ni idea','I have no idea',N('Incertesa emfàtica','Incertidumbre enfática','Emphatic uncertainty'));
+P(2,'il faut que je parte','he de marxar','tengo que irme','I have to leave',N('Porta subjuntiu','Lleva subjuntivo','Uses subjunctive'));
+P(2,'ça dépend','depèn','depende','it depends',N('Resposta habitual','Respuesta habitual','Common answer'));
+P(2,'avoir du mal à','costar (fer alguna cosa)','costar (hacer algo)','to struggle to',N("Seguit d'infinitiu",'Seguido de infinitivo','Followed by infinitive'));
+
+// ---- B2
+V(3,'la grève','f','la vaga','la huelga','the strike',["La [grève] des trains dure depuis lundi.","La vaga de trens dura des de dilluns.","La huelga de trenes dura desde el lunes.","The train strike has lasted since Monday."]);
+V(3,'le malentendu','m','el malentès','el malentendido','the misunderstanding',["C'est un simple [malentendu].","És només un malentès.","Es un simple malentendido.","It's just a misunderstanding."]);
+V(3,'la croissance','f','el creixement','el crecimiento','growth',["La [croissance] économique ralentit.","El creixement econòmic alenteix.","El crecimiento económico se ralentiza.","Economic growth is slowing."]);
+V(3,"l'outil",'m',"l'eina",'la herramienta','the tool',["Ce logiciel est un [outil] très utile.","Aquest programa és una eina molt útil.","Este programa es una herramienta muy útil.","This software is a very useful tool."]);
+V(3,"l'enjeu",'m','el que està en joc','lo que está en juego','the stake',["L'[enjeu] de ce débat est énorme.","El que hi ha en joc en aquest debat és enorme.","Lo que está en juego en este debate es enorme.","The stakes of this debate are huge."]);
+V(3,'le bouleversement','m','el trasbals','la conmoción','the upheaval',["Cette crise a causé un grand [bouleversement].","Aquesta crisi ha provocat un gran trasbals.","Esta crisis ha causado una gran conmoción.","This crisis caused a major upheaval."]);
+B(3,"qu'il soit",'être','subj','que sigui','que sea','that he be',["Il faut qu'il [soit] à l'heure.","Cal que sigui puntual.","Hace falta que sea puntual.","He must be on time."]);
+B(3,'nous aurions pu','pouvoir','condp','hauríem pogut','habríamos podido','we could have',["Nous [aurions pu] gagner.","Hauríem pogut guanyar.","Habríamos podido ganar.","We could have won."]);
+B(3,'je me suis rendu compte','se rendre compte','pc',"me n'he adonat",'me he dado cuenta','I realised',["Je [me suis rendu compte] de mon erreur.","M'he adonat del meu error.","Me he dado cuenta de mi error.","I realised my mistake."]);
+B(3,"elle s'en va","s'en aller",'pres',"ella se'n va",'ella se va',"she's leaving",["Elle [s'en va] demain matin.","Se'n va demà al matí.","Se va mañana por la mañana.","She is leaving tomorrow morning."]);
+P(3,'avoir le cafard','estar baix de moral','estar de bajón','to feel down',IDIOM);
+P(3,'poser un lapin','deixar plantat algú','dar plantón','to stand someone up',IDIOM);
+P(3,'en avoir marre','estar-ne fart','estar harto','to be fed up',N('Col·loquial','Coloquial','Colloquial'));
+P(3,'quand même','tot i així','aun así','still / anyway',N('Connector molt freqüent','Conector muy frecuente','Very common connector'));
+
+// ---- C1
+V(4,"l'épanouissement",'m','la realització personal','la realización personal','fulfilment',["Le travail contribue à son [épanouissement].","La feina contribueix a la seva realització personal.","El trabajo contribuye a su realización personal.","Work contributes to their fulfilment."]);
+V(4,'la démarche','f','el procediment','el trámite','the procedure / approach',["Cette [démarche] demande beaucoup de patience.","Aquest procediment exigeix molta paciència.","Este trámite exige mucha paciencia.","This procedure takes a lot of patience."]);
+V(4,'le désarroi','m','el desconcert','el desconcierto','distress / confusion',["Il était en plein [désarroi].","Estava totalment desconcertat.","Estaba completamente desconcertado.","He was in complete distress."]);
+V(4,'la mise en œuvre','f','la posada en pràctica','la puesta en práctica','the implementation',["La [mise en œuvre] du projet commence en mars.","La posada en pràctica del projecte comença al març.","La puesta en práctica del proyecto empieza en marzo.","The implementation of the project begins in March."]);
+V(4,"l'aléa",'m',"l'imprevist",'el imprevisto','the unforeseen risk',["Il faut tenir compte des [aléas] climatiques.","Cal tenir en compte els imprevistos climàtics.","Hay que tener en cuenta los imprevistos climáticos.","You must allow for climate-related uncertainties."]);
+V(4,'la méfiance','f','la desconfiança','la desconfianza','distrust',["Elle me regarde avec [méfiance].","Em mira amb desconfiança.","Me mira con desconfianza.","She looks at me with distrust."]);
+B(4,"bien qu'il ait",'avoir','subj','tot i que tingui','aunque tenga','although he has',["Bien qu'il [ait] raison, personne ne l'écoute.","Tot i que té raó, ningú l'escolta.","Aunque tiene razón, nadie le escucha.","Although he is right, nobody listens to him."]);
+B(4,"je m'y attendais","s'attendre à",'imp',"m'ho esperava",'me lo esperaba','I expected it',["Je m'y [attendais] depuis longtemps.","Ho esperava des de feia temps.","Lo esperaba desde hacía tiempo.","I had been expecting it for a long time."]);
+B(4,'ils auront fini','finir','futant','hauran acabat','habrán terminado','they will have finished',["Ils [auront fini] avant midi.","Hauran acabat abans del migdia.","Habrán terminado antes del mediodía.","They will have finished before noon."]);
+B(4,'il aurait fallu','falloir','condp','hauria calgut','habría hecho falta','it would have been necessary',["Il [aurait fallu] y penser plus tôt.","Hauria calgut pensar-hi abans.","Habría hecho falta pensarlo antes.","We should have thought of it sooner."]);
+P(4,"à moins qu'il ne pleuve",'tret que plogui','a menos que llueva','unless it rains',N('Ne expletiu + subjuntiu','Ne expletivo + subjuntivo','Expletive ne + subjunctive'));
+P(4,'tant bien que mal','com es pot','mal que bien','somehow or other',IDIOM);
+P(4,"il n'empêche que",'això no treu que','no quita que','nevertheless',N('Registre formal','Registro formal','Formal register'));
+P(4,'faire la part des choses','relativitzar','relativizar','to keep things in perspective',IDIOM);
+
+// ---- C2
+V(5,"l'atermoiement",'m','la dilació','la dilación','procrastination',["Après des mois d'[atermoiements], il a décidé.","Després de mesos de dilacions, va decidir.","Tras meses de dilaciones, decidió.","After months of dithering, he decided."]);
+V(5,'la gageure','f','el repte arriscat','el desafío','a gamble / challenge',["Finir à temps relève de la [gageure].","Acabar a temps és un repte gairebé impossible.","Terminar a tiempo es casi una proeza.","Finishing on time is a real challenge."]);
+V(5,"l'acabit",'m','la mena','la calaña','the ilk',["Je me méfie des gens de cet [acabit].","Desconfio de la gent d'aquesta mena.","Desconfío de la gente de esa calaña.","I distrust people of that ilk."]);
+V(5,'le truchement','m','la mediació','la mediación','the intermediary',["Il a parlé par le [truchement] d'un interprète.","Va parlar per mitjà d'un intèrpret.","Habló por medio de un intérprete.","He spoke through an interpreter."]);
+V(5,'la verve','f','la facúndia','la elocuencia','verve',["Il raconte avec beaucoup de [verve].","Ho explica amb molta facúndia.","Lo cuenta con mucha elocuencia.","He tells it with great verve."]);
+V(5,'la désinvolture','f','la desimboltura','el descaro','offhandedness',["Elle a répondu avec [désinvolture].","Va respondre amb desimboltura.","Respondió con descaro.","She answered with nonchalance."]);
+B(5,'il eût fallu','falloir','subjpqp','hauria calgut (literari)','habría hecho falta (literario)','it would have been needed (literary)',["Il [eût fallu] agir plus vite.","Hauria calgut actuar més de pressa.","Habría hecho falta actuar más rápido.","One would have needed to act faster."]);
+B(5,'que je susse','savoir','subjimp','que sabés','que supiera','that I knew',["Il voulait que je [susse] la vérité.","Volia que sabés la veritat.","Quería que supiera la verdad.","He wanted me to know the truth."]);
+B(5,'nous vînmes','venir','ps','vinguérem','vinimos','we came',["Ce soir-là, nous [vînmes] tous ensemble.","Aquell vespre vam venir tots junts.","Aquella noche vinimos todos juntos.","That evening we all came together."]);
+B(5,'ils se fussent tus','se taire','subjpqp',"s'haguessin callat",'se hubieran callado','they would have kept quiet',["S'ils avaient su, ils [se fussent tus].","Si ho haguessin sabut, s'haguessin callat.","De haberlo sabido, se habrían callado.","Had they known, they would have kept quiet."]);
+P(5,'avoir maille à partir avec','tenir topades amb','tener un rifirrafe con','to have a run-in with',IDIOM);
+P(5,'se mettre martel en tête','amoïnar-se molt','comerse la cabeza','to fret',IDIOM);
+P(5,'battre la campagne','divagar','divagar','to ramble',IDIOM);
+P(5,"à l'avenant",'en consonància','en consonancia','in keeping',N('Registre culte','Registro culto','Formal register'));
+
+/* ===================================================================
+   CONJUGACIÓN (tablas generadas a partir de pocos datos por verbo)
+   p = presente · pp = participio · aux = auxiliar · fs = raíz de futuro
+   is = raíz de imperfecto (isN = raíz para nous/vous si es distinta)
+   =================================================================== */
+const PRON = ['je','tu','il/elle','nous','vous','ils/elles'];
+const AUX = {avoir:['ai','as','a','avons','avez','ont'], être:['suis','es','est','sommes','êtes','sont']};
+const END_IMP = ['ais','ais','ait','ions','iez','aient'];
+const END_FUT = ['ai','as','a','ons','ez','ont'];
+const ER = stem => [stem+'e', stem+'es', stem+'e', stem+'ons', stem+'ez', stem+'ent'];
+const CONJ = {
+  'être':    {p:['suis','es','est','sommes','êtes','sont'], pp:'été', aux:'avoir', fs:'ser', is:'ét'},
+  'avoir':   {p:['ai','as','a','avons','avez','ont'], pp:'eu', aux:'avoir', fs:'aur', is:'av'},
+  'aller':   {p:['vais','vas','va','allons','allez','vont'], pp:'allé', aux:'être', fs:'ir', is:'all'},
+  'parler':  {p:ER('parl'), pp:'parlé', aux:'avoir', fs:'parler', is:'parl'},
+  'finir':   {p:['finis','finis','finit','finissons','finissez','finissent'], pp:'fini', aux:'avoir', fs:'finir', is:'finiss'},
+  'faire':   {p:['fais','fais','fait','faisons','faites','font'], pp:'fait', aux:'avoir', fs:'fer', is:'fais'},
+  'pouvoir': {p:['peux','peux','peut','pouvons','pouvez','peuvent'], pp:'pu', aux:'avoir', fs:'pourr', is:'pouv'},
+  'vouloir': {p:['veux','veux','veut','voulons','voulez','veulent'], pp:'voulu', aux:'avoir', fs:'voudr', is:'voul'},
+  'prendre': {p:['prends','prends','prend','prenons','prenez','prennent'], pp:'pris', aux:'avoir', fs:'prendr', is:'pren'},
+  'manger':  {p:['mange','manges','mange','mangeons','mangez','mangent'], pp:'mangé', aux:'avoir', fs:'manger', is:'mange', isN:'mang'},
+  'devoir':  {p:['dois','dois','doit','devons','devez','doivent'], pp:'dû', aux:'avoir', fs:'devr', is:'dev'},
+  'partir':  {p:['pars','pars','part','partons','partez','partent'], pp:'parti', aux:'être', fs:'partir', is:'part'},
+  'savoir':  {p:['sais','sais','sait','savons','savez','savent'], pp:'su', aux:'avoir', fs:'saur', is:'sav'},
+  'venir':   {p:['viens','viens','vient','venons','venez','viennent'], pp:'venu', aux:'être', fs:'viendr', is:'ven'}
+};
+const VOWEL = /^[aeiouyàâäéèêëîïôöùûüh]/i;
+const withPron = (i, f) => i === 0 ? (VOWEL.test(f) ? "j'" + f : 'je ' + f) : PRON[i] + ' ' + f;
+function conjTable(v){
+  const rows = {pres:[], pc:[], imp:[], fut:[], cond:[]};
+  for (let i = 0; i < 6; i++){
+    const stemI = (i === 3 || i === 4) && v.isN ? v.isN : v.is;
+    rows.pres.push(withPron(i, v.p[i]));
+    rows.pc.push(withPron(i, AUX[v.aux][i] + ' ' + v.pp));
+    rows.imp.push(withPron(i, stemI + END_IMP[i]));
+    rows.fut.push(withPron(i, v.fs + END_FUT[i]));
+    rows.cond.push(withPron(i, v.fs + END_IMP[i]));
+  }
+  return rows;
+}
+
+/* ===================================================================
+   ESTADO Y GUARDADO
+   =================================================================== */
+const KEY = 'carnet-fr-v3';
+const OLD_KEY = 'carnet-fr-v2';
+let state = {
+  lang:'es', theme:'auto', level:null, dir:'mixed', sound:false, goal:20,
+  cats:{vocab:true, verb:true, phrase:true},
+  cards:{},          // fr → {b: caja 0-5, due: ms, n: veces vistas, w: fallos}
+  stats:{days:{}},   // 'YYYY-MM-DD' → {n, ok}
+  custom:[],         // cartas propias
+  maxShown:false
+};
+try {
+  let s = JSON.parse(localStorage.getItem(KEY));
+  if (!s) {
+    const o = JSON.parse(localStorage.getItem(OLD_KEY));   // migración desde la versión anterior
+    if (o) {
+      s = {lang:o.lang, theme:o.theme, level:o.level, cats:o.cats, maxShown:o.maxShown, cards:{}};
+      if (o.boxes) for (const k in o.boxes) s.cards[k] = {b:Math.min(5, o.boxes[k] | 0), due:0, n:o.boxes[k] > 0 ? 1 : 0, w:0};
+    }
+  }
+  if (s && typeof s === 'object') {
+    if (STR.options[s.lang]) state.lang = s.lang;
+    if (['auto','light','dark'].includes(s.theme)) state.theme = s.theme;
+    if (Number.isInteger(s.level) && s.level >= 0 && s.level < LEVELS.length) state.level = s.level;
+    if (['mixed','fr2l1','l12fr'].includes(s.dir)) state.dir = s.dir;
+    state.sound = !!s.sound;
+    if ([10,20,30,50].includes(s.goal)) state.goal = s.goal;
+    if (s.cats) CATS.forEach(c => { if (typeof s.cats[c] === 'boolean') state.cats[c] = s.cats[c]; });
+    if (s.cards && typeof s.cards === 'object') state.cards = s.cards;
+    if (s.stats && s.stats.days && typeof s.stats.days === 'object') state.stats = s.stats;
+    if (Array.isArray(s.custom)) state.custom = s.custom.filter(c => c && c.fr && c.t && CATS.includes(c.cat) && c.lvl >= 0 && c.lvl <= 5);
+    state.maxShown = !!s.maxShown;
+  } else {
+    const nav = (navigator.language || '').slice(0, 2);
+    if (STR.options[nav]) state.lang = nav;
+  }
+} catch(e) {}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e) {} }
+
+let deck = [];
+function rebuildDeck(){ deck = BASE.concat(state.custom.map(c => Object.assign(c, {custom:true}))); }
+rebuildDeck();
+
+const pickL = o => o ? (o[state.lang] || o.es || o.en || o.ca || Object.values(o)[0] || '') : '';
+const tr = c => pickL(c.t);
+function noteFor(c){
+  if (c.custom) return c.n ? pickL(c.n) : '';
+  if (c.cat === 'vocab') return t(c.g === 'm' ? 'nounM' : 'nounF');
+  if (c.cat === 'verb') return `${c.inf} · ${t('tn_' + c.tn)}`;
+  return pickL(c.n);
+}
+const rec = c => state.cards[c.fr] || {b:0, due:0, n:0, w:0};
+const MASTER = 2;     // caja a partir de la cual una carta cuenta como dominada
+const GOAL = 0.8;     // % de dominadas para subir de nivel
+const DAY = 864e5;
+const INTERVALS = [60e3, 5 * 60e3, DAY, 3 * DAY, 7 * DAY, 14 * DAY];   // tiempo hasta el próximo repaso según caja
+
+/* ---------- estadísticas diarias ---------- */
+const dayKey = d => (d || new Date()).toLocaleDateString('sv-SE');
+function today(){ return state.stats.days[dayKey()] || {n:0, ok:0}; }
+function dayStreak(){
+  const d = new Date(), days = state.stats.days;
+  if (!(days[dayKey(d)] && days[dayKey(d)].n > 0)) d.setDate(d.getDate() - 1);
+  let s = 0;
+  while (days[dayKey(d)] && days[dayKey(d)].n > 0){ s++; d.setDate(d.getDate() - 1); }
+  return s;
+}
+function logAnswer(ok){
+  const k = dayKey(), d = state.stats.days[k] || (state.stats.days[k] = {n:0, ok:0});
+  d.n++; if (ok) d.ok++;
+  if (d.n === state.goal) toast(t('goal_hit'));
+}
+
+/* ---------- repetición espaciada ---------- */
+let current = null, last = null, hardPool = null;
+let correct = 0, answered = 0, streak = 0;
+
+const levelCards = l => deck.filter(c => c.lvl === l && state.cats[c.cat]);
+function progress(){
+  const cur = levelCards(state.level);
+  const m = cur.filter(c => rec(c).b >= MASTER).length;
+  return {m, n:cur.length, need:Math.ceil(cur.length * GOAL)};
+}
+function pickNext(){
+  const now = Date.now();
+  const ex = a => a.length > 1 ? a.filter(c => c !== last) : a;
+  if (hardPool) return weighted(ex(hardPool), c => { const r = rec(c); return 1 + r.w / (r.b + 1); });
+  const cur = levelCards(state.level);
+  if (!cur.length) return null;
+  const isDue = c => { const r = state.cards[c.fr]; return r && r.due <= now; };
+  const due = cur.filter(isDue), fresh = cur.filter(c => !state.cards[c.fr]);
+  const lowDue = deck.filter(c => c.lvl < state.level && state.cats[c.cat] && isDue(c));
+  if (lowDue.length && Math.random() < 0.3) return weighted(ex(lowDue), c => 1 + (5 - rec(c).b));
+  if (due.length && (!fresh.length || Math.random() < 0.7)) return weighted(ex(due), c => 1 + (5 - rec(c).b));
+  if (fresh.length) return rand(ex(fresh));
+  // práctica extra: las que antes tocan repasar
+  const soon = [...cur].sort((a, b) => rec(a).due - rec(b).due).slice(0, Math.min(6, cur.length));
+  return rand(ex(soon));
+}
+
+// devuelve 'up', 'max' o false
+function grade(c, ok){
+  const r = state.cards[c.fr] || (state.cards[c.fr] = {b:0, due:0, n:0, w:0});
+  r.n++;
+  if (ok) r.b = Math.min(r.b + 1, 5); else { r.b = 0; r.w++; }
+  r.due = Date.now() + INTERVALS[r.b];
+  answered++;
+  if (ok){ correct++; streak++; bumpStreak(); } else streak = 0;
+  logAnswer(ok);
+  let result = false;
+  const pr = progress();
+  if (!hardPool && pr.n && pr.m >= pr.need){
+    if (state.level < LEVELS.length - 1){ state.level++; last = null; result = 'up'; }
+    else if (!state.maxShown){ state.maxShown = true; result = 'max'; }
+  }
+  save();
+  updateHud();
+  return result;
+}
+
+/* ===================================================================
+   VOZ (síntesis del navegador)
+   =================================================================== */
+const TTS = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+function speak(text){
+  if (!TTS) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text.replace(/[\[\]]/g, ''));
+    u.lang = 'fr-FR'; u.rate = 0.9;
+    const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith('fr'));
+    if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  } catch(e) {}
+}
+function speakBtn(text){
+  if (!TTS) return document.createComment('');
+  const b = el('button', 'speak', '🔊');
+  b.type = 'button'; b.setAttribute('aria-label', t('speak'));
+  b.onclick = e => { e.stopPropagation(); speak(text); };
+  return b;
+}
+
+/* ===================================================================
+   COMPROBACIÓN DE RESPUESTAS ESCRITAS
+   =================================================================== */
+const strip = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+function clean(s){
+  return s.toLowerCase().replace(/[’‘`´]/g, "'").replace(/œ/g, 'oe').replace(/æ/g, 'ae')
+    .replace(/[¿?¡!.,;:«»"()]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function lev(a, b){
+  const m = a.length, n = b.length, d = Array.from({length:m + 1}, (_, i) => [i]);
+  for (let j = 1; j <= n; j++) d[0][j] = j;
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++)
+    d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+  return d[m][n];
+}
+const ART_RE = /^(le |la |l'|les |un |une )/;
+const PRON_RE = /^(je |j'|tu |il |elle |nous |vous |ils |elles |on )/;
+const BRACKET_RE = /\[([^\]]+)\]/;
+function targetsFor(c, cloze){
+  const out = new Set(), add = s => { s = clean(s); if (s) out.add(s); };
+  if (cloze){ const m = BRACKET_RE.exec(c.ex.f); if (m) add(m[1]); }
+  const f = clean(c.fr);
+  add(f);
+  if (c.cat === 'vocab') add(f.replace(ART_RE, ''));
+  if (c.cat === 'verb') add(f.replace(PRON_RE, ''));
+  return [...out];
+}
+// → 'exact' | 'accent' | 'almost' | 'wrong'
+function checkAnswer(ans, targets){
+  const a = clean(ans);
+  if (!a) return 'wrong';
+  if (targets.includes(a)) return 'exact';
+  const sa = strip(a);
+  if (targets.some(x => strip(x) === sa)) return 'accent';
+  if (targets.some(x => x.length >= 5 && lev(strip(x), sa) === 1)) return 'almost';
+  return 'wrong';
+}
+
+/* ===================================================================
+   EJERCICIOS
+   Cada uno: ejercicio(carta, contenedor, done(ok), opciones)
+   =================================================================== */
+function frenchLine(c){
+  const d = el('div', 'fr-line');
+  d.append(el('span', 'french-word', c.fr), speakBtn(c.fr));
+  return d;
+}
+function exNodes(f, mode){
+  const frag = document.createDocumentFragment();
+  let blank = null;
+  f.split(/(\[[^\]]+\])/).forEach(p => {
+    if (p.length > 2 && p[0] === '[' && p[p.length - 1] === ']'){
+      const w = p.slice(1, -1);
+      if (mode === 'blank'){ blank = el('span', 'blank', '_____'); blank.dataset.w = w; frag.append(blank); }
+      else frag.append(el('strong', '', w));
+    } else frag.append(document.createTextNode(p));
+  });
+  return {frag, blank};
+}
+function addExtras(c, host, o = {}){
+  const box = el('div', 'extra');
+  if (c.ex && !o.noExample){
+    const s = el('div', 'ex-fr');
+    s.append(exNodes(c.ex.f, 'show').frag, speakBtn(c.ex.f));
+    box.append(s, el('div', 'ex-tr', pickL(c.ex.t)));
+  }
+  if (c.cat === 'verb' && CONJ[c.inf]){
+    const b = el('button', 'btn ghost sm', t('conj'));
+    b.type = 'button';
+    b.onclick = () => showConj(c.inf);
+    box.append(b);
+  }
+  if (box.childNodes.length) host.append(box);
+}
+function optionsList(labels, right, onPick){
+  const wrap = el('div', 'options');
+  wrap.setAttribute('role', 'group');
+  shuffle(labels).forEach((o, i) => {
+    const b = el('button', 'opt-btn');
+    b.type = 'button'; b.dataset.val = o;
+    b.append(el('span', 'kb', String(i + 1)), document.createTextNode(o));
+    b.style.animationDelay = (i * 0.06) + 's';
+    b.onclick = () => {
+      const all = wrap.querySelectorAll('.opt-btn');
+      all.forEach(x => x.disabled = true);
+      const ok = o === right;
+      b.classList.add(ok ? 'correct' : 'wrong');
+      if (!ok) all.forEach(x => { if (x.dataset.val === right) x.classList.add('correct'); });
+      onPick(ok);
+    };
+    wrap.append(b);
+  });
+  return wrap;
+}
+function distractors(c, valueOf, n){
+  const right = valueOf(c), picks = [];
+  const pool = deck.filter(d => d !== c);
+  const near = pool.filter(d => d.cat === c.cat && d.lvl === c.lvl);
+  const same = pool.filter(d => d.cat === c.cat);
+  for (const d of [...shuffle(near), ...shuffle(same), ...shuffle(pool)]){
+    const v = valueOf(d);
+    if (v && v !== right && !picks.includes(v)) picks.push(v);
+    if (picks.length === n) break;
+  }
+  return picks;
+}
+
+// Reconocer: francés → mi idioma (tarjeta que se gira, autoevaluación)
+function exFlip(c, host, done){
+  const scene = el('div', 'flip-scene'), fc = el('div', 'flip-card');
+  const front = el('div', 'face front'), back = el('div', 'face back');
+  const hint = el('button', 'flip-hint', t('reveal')); hint.type = 'button';
+  front.append(el('div', 'prompt-label', t('q_translate')), frenchLine(c), hint);
+
+  back.append(el('div', 'prompt-label', c.fr), el('div', 'translation', tr(c)));
+  const n = noteFor(c); if (n) back.append(el('div', 'note', n));
+  addExtras(c, back);
+  const row = el('div', 'row');
+  const no = el('button', 'btn bad', t('didnt')), yes = el('button', 'btn good', t('knew'));
+  no.type = yes.type = 'button';
+  const answer = ok => { no.disabled = yes.disabled = true; done(ok); };
+  no.onclick = () => answer(false);
+  yes.onclick = () => answer(true);
+  row.append(no, yes);
+  back.append(row);
+
+  hint.onclick = () => {
+    fc.classList.add('flipped'); front.setAttribute('aria-hidden', 'true');
+    setTimeout(() => yes.focus({preventScroll:true}), 400);
+  };
+  fc.append(front, back); scene.append(fc); host.append(scene);
+  if (state.sound) speak(c.fr);
+  setTimeout(() => hint.focus({preventScroll:true}), 60);
+}
+
+// Reconocer: francés → elegir traducción
+function exMcq(c, host, done, o = {}){
+  const right = tr(c);
+  host.append(el('div', 'prompt-label', t('choose_fr2l1')), frenchLine(c));
+  host.append(optionsList([right, ...distractors(c, tr, 3)], right, ok => {
+    if (o.extras !== false) addExtras(c, host);
+    announce(ok ? t('ok_right') : t('wrong', {w:right}));
+    done(ok);
+  }));
+  if (state.sound && o.extras !== false) speak(c.fr);
+}
+
+// Producir: mi idioma → elegir la palabra en francés
+function exMcqRev(c, host, done){
+  host.append(el('div', 'prompt-label', t('choose_l12fr')), el('div', 'french-word', tr(c)));
+  host.append(optionsList([c.fr, ...distractors(c, d => d.fr, 3)], c.fr, ok => {
+    addExtras(c, host);
+    announce(ok ? t('ok_right') : t('wrong', {w:c.fr}));
+    if (state.sound) speak(c.fr);
+    done(ok);
+  }));
+}
+
+// Producir: escribir la palabra (mi idioma → francés) o completar una frase (cloze)
+function exType(c, host, done, cloze){
+  const targets = targetsFor(c, cloze);
+  const shown = cloze ? BRACKET_RE.exec(c.ex.f)[1] : c.fr;
+  let blank = null;
+  if (cloze){
+    host.append(el('div', 'prompt-label', t('cloze_prompt')));
+    const s = el('div', 'sentence'), n = exNodes(c.ex.f, 'blank');
+    s.append(n.frag); blank = n.blank; host.append(s);
+    host.append(el('div', 'ex-tr', pickL(c.ex.t)));
+    const cue = el('div', 'cue'); cue.append(document.createTextNode(t('cue') + ': '), el('b', '', tr(c)));
+    host.append(cue);
+  } else {
+    host.append(el('div', 'prompt-label', t('type_prompt')), el('div', 'french-word', tr(c)));
+  }
+  const input = el('input', 'txt');
+  input.type = 'text'; input.autocomplete = 'off'; input.autocapitalize = 'none'; input.spellcheck = false;
+  input.setAttribute('aria-label', t(cloze ? 'cloze_prompt' : 'type_prompt'));
+  input.placeholder = t('placeholder');
+  const fb = el('div', 'fb'); fb.setAttribute('role', 'status');
+  const row = el('div', 'row');
+  const idk = el('button', 'btn ghost', t('dontknow')), chk = el('button', 'btn', t('check'));
+  idk.type = chk.type = 'button';
+  row.append(idk, chk);
+  host.append(input, fb, row);
+
+  let finished = false;
+  const finish = res => {
+    if (finished) return;
+    finished = true;
+    input.disabled = chk.disabled = idk.disabled = true;
+    const ok = res === 'exact' || res === 'accent';
+    const msg = res === 'exact' ? t('ok_right') : res === 'accent' ? t('ok_accent', {w:shown})
+      : res === 'almost' ? t('almost', {w:shown}) : t('wrong', {w:shown});
+    fb.textContent = msg; fb.className = 'fb ' + (ok ? 'ok' : 'bad');
+    if (blank){ blank.textContent = shown; blank.classList.add(ok ? 'ok' : 'bad'); }
+    addExtras(c, host, {noExample: cloze});
+    announce(msg);
+    if (state.sound) speak(cloze ? c.ex.f : c.fr);
+    done(ok);
+  };
+  chk.onclick = () => { if (input.value.trim()) finish(checkAnswer(input.value, targets)); else input.focus(); };
+  idk.onclick = () => finish('wrong');
+  input.onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); chk.click(); } };
+  setTimeout(() => input.focus({preventScroll:true}), 60);
+}
+
+const EX = {
+  flip:   (c, h, d) => exFlip(c, h, d),
+  mcq:    (c, h, d) => exMcq(c, h, d),
+  mcqRev: (c, h, d) => exMcqRev(c, h, d),
+  type:   (c, h, d) => exType(c, h, d, false),
+  cloze:  (c, h, d) => exType(c, h, d, true)
+};
+function pickMode(c){
+  const b = rec(c).b, dir = state.dir;
+  const hasCloze = !!(c.ex && BRACKET_RE.test(c.ex.f));
+  let pool;
+  if (dir === 'fr2l1') pool = b < 2 ? ['flip', 'mcq'] : ['mcq', 'flip'];
+  else if (dir === 'l12fr') pool = b < 1 ? ['mcqRev'] : b < 3 ? ['mcqRev', 'type'] : ['type', 'cloze'];
+  else pool = b < 1 ? ['flip', 'mcq'] : b < 2 ? ['mcq', 'mcqRev', 'flip'] : b < 4 ? ['mcqRev', 'type', 'cloze', 'mcq'] : ['type', 'cloze', 'type'];
+  if (!hasCloze) pool = pool.map(m => m === 'cloze' ? 'type' : m);
+  return rand(pool);
+}
+
+/* ===================================================================
+   PANTALLA: ESTUDIAR
+   =================================================================== */
+function updateHud(){
+  $('streak').textContent = dayStreak();
+  $('streakWrap').title = t('daystreak');
+  if (state.level === null) return;
+  $('levelBadge').textContent = LEVELS[state.level];
+  const pr = progress();
+  $('progLabel').textContent = `${t('level')} ${LEVELS[state.level]} · ${t('lvl' + state.level)}`;
+  $('progCount').textContent = `${pr.m} / ${pr.n} ${t('mastered')}`;
+  $('barFill').style.width = (pr.n ? (pr.m / pr.n) * 100 : 0) + '%';
+  const d = today();
+  $('goalLabel').textContent = t('today');
+  $('goalCount').textContent = `${d.n} / ${state.goal}`;
+  $('goalFill').style.width = Math.min(100, d.n / state.goal * 100) + '%';
+  $('score').textContent = `${t('score')} ${correct}/${answered} · 🔥 ${t('streak_short')} ${streak}`;
+  $('hardBanner').hidden = !hardPool;
+  $('hardText').textContent = t('hard_mode');
+  $('hardExit').textContent = t('exit');
+}
+function bumpStreak(){
+  const s = $('streakWrap');
+  s.classList.remove('bump'); void s.offsetWidth; s.classList.add('bump');
+}
+function feedback(ok){
+  const card = $('card');
+  card.classList.remove('pop', 'shake', 'enter'); void card.offsetWidth;
+  card.classList.add(ok ? 'pop' : 'shake');
+  if (ok){ const p = el('span', 'plus', '+1'); card.append(p); setTimeout(() => p.remove(), 900); }
+}
+const nextBtn = $('nextBtn');
+function renderCard(){
+  const body = $('cardBody');
+  body.replaceChildren();
+  nextBtn.classList.remove('show');
+  nextBtn.textContent = t('next');
+  const c = pickNext();
+  const card = $('card');
+  card.classList.remove('enter', 'pop', 'shake'); void card.offsetWidth; card.classList.add('enter');
+  if (!c){
+    current = null;
+    $('tab').textContent = ''; $('tab').className = 'tab';
+    body.append(el('div', 'prompt-label', t('no_cards')));
+    return;
+  }
+  current = last = c;
+  const mode = pickMode(c);
+  $('tab').textContent = `${t('cat_' + c.cat)} · ${LEVELS[c.lvl]}`;
+  $('tab').className = 'tab ' + c.cat;
+  updateHud();
+  EX[mode](c, body, ok => {
+    feedback(ok);
+    const res = grade(c, ok);
+    if (res) setTimeout(() => showLevelUp(res), 700);
+    else if (mode === 'flip') setTimeout(renderCard, 450);
+    else { nextBtn.classList.add('show'); setTimeout(() => nextBtn.focus({preventScroll:true}), 30); }
+  });
+}
+nextBtn.onclick = renderCard;
+$('hardExit').onclick = () => { hardPool = null; renderCard(); };
+
+function showLevelUp(kind){
+  if (kind === 'up'){
+    $('luBig').textContent = LEVELS[state.level];
+    $('luTitle').textContent = t('levelUp');
+    $('luText').textContent = t('lvl' + state.level) + ' — ' + t('lvd' + state.level);
+  } else {
+    $('luBig').textContent = '🏆';
+    $('luTitle').textContent = t('maxTitle');
+    $('luText').textContent = t('maxText');
+  }
+  $('luBtn').textContent = t('continue');
+  $('levelUp').hidden = false;
+  $('luBtn').focus();
+  const colors = ['#A63D40', '#5F7D5B', '#B6852B', '#3E5C8A', '#D9A844'];
+  for (let i = 0; i < 70; i++){
+    const c = el('span', 'confetti');
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = colors[i % colors.length];
+    c.style.animationDuration = (1.6 + Math.random() * 1.8) + 's';
+    c.style.animationDelay = (Math.random() * 0.5) + 's';
+    $('levelUp').append(c);
+  }
+}
+$('luBtn').onclick = () => {
+  $('levelUp').hidden = true;
+  $('levelUp').querySelectorAll('.confetti').forEach(c => c.remove());
+  renderCard();
+};
+
+/* ===================================================================
+   MODAL: CONJUGACIÓN
+   =================================================================== */
+let conjFocus = null;
+function showConj(inf){
+  const v = CONJ[inf]; if (!v) return;
+  const rows = conjTable(v);
+  const tenses = ['pres', 'pc', 'imp', 'fut', 'cond'];
+  const draw = key => {
+    $('conjTabs').replaceChildren(...tenses.map(k => {
+      const b = el('button', k === key ? 'active' : '', t('tn_' + k));
+      b.type = 'button'; b.setAttribute('aria-pressed', String(k === key));
+      b.onclick = () => draw(k);
+      return b;
+    }));
+    $('conjTable').replaceChildren(...rows[key].map((f, i) => {
+      const row = document.createElement('tr');
+      const m = /^(j'|je |tu |il\/elle |nous |vous |ils\/elles )(.*)$/.exec(f) || ['', '', f];
+      row.append(el('td', '', m[1].trim()), el('td', '', m[2]));
+      return row;
+    }));
+    $('conjNote').textContent = key === 'pc' && v.aux === 'être' ? t('conj_etre') : '';
+  };
+  $('conjTitle').textContent = t('conj_title', {v:inf});
+  $('conjClose').textContent = t('close');
+  draw('pres');
+  conjFocus = document.activeElement;
+  $('conjModal').hidden = false;
+  $('conjClose').focus();
+}
+function closeConj(){ $('conjModal').hidden = true; if (conjFocus && conjFocus.focus) conjFocus.focus({preventScroll:true}); }
+$('conjClose').onclick = closeConj;
+$('conjModal').onclick = e => { if (e.target === $('conjModal')) closeConj(); };
+
+/* ===================================================================
+   PANTALLAS: ELEGIR NIVEL Y TEST DE NIVEL
+   =================================================================== */
+function segButtons(items, current, onPick, cls){
+  const d = el('div', cls || 'seg');
+  items.forEach(([val, label, title]) => {
+    const b = el('button', val === current ? 'active' : '', label);
+    b.type = 'button'; b.setAttribute('aria-pressed', String(val === current));
+    if (title) b.title = title;
+    b.onclick = () => onPick(val);
+    d.append(b);
+  });
+  return d;
+}
+function langSeg(container, onChange){
+  container.replaceChildren(...segButtons(Object.keys(LANGNAME).map(k => [k, LANGNAME[k]]), state.lang,
+    code => { state.lang = code; save(); applyLang(); onChange(); }).children);
+}
+function renderOnboard(){
+  langSeg($('onboardLang'), renderOnboard);
+  $('onboardTitle').textContent = t('onb_title');
+  $('onboardSub').textContent = t('onb_sub');
+  $('onboardTest').textContent = t('onb_test');
+  $('onboardOr').textContent = t('onb_or');
+  const grid = $('lvlGrid'); grid.replaceChildren();
+  LEVELS.forEach((code, i) => {
+    const b = el('button', 'lvl'); b.type = 'button';
+    b.style.animationDelay = (i * 0.07) + 's';
+    b.append(el('b', '', code), el('span', '', t('lvl' + i)), el('small', '', t('lvd' + i)));
+    b.onclick = () => { state.level = i; save(); go('study'); };
+    grid.append(b);
+  });
+}
+$('onboardTest').onclick = () => startTest();
+
+let test = null;
+function startTest(){
+  test = {lvl:0, q:0, right:0, asked:0, used:new Set()};
+  go('test');
+  testQuestion();
+}
+function testQuestion(){
+  const host = $('testHost');
+  host.replaceChildren();
+  $('testNext').classList.remove('show');
+  $('testNext').textContent = t('next');
+  $('testCancel').textContent = t('cancel');
+  const pool = BASE.filter(c => c.lvl === test.lvl && !test.used.has(c.fr));
+  const c = rand(pool);
+  test.used.add(c.fr);
+  $('testLabel').textContent = `${t('test_q', {n:test.asked + 1})} · ${LEVELS[test.lvl]}`;
+  exMcq(c, host, ok => {
+    test.asked++; test.q++;
+    if (ok) test.right++;
+    $('testNext').classList.add('show');
+    setTimeout(() => $('testNext').focus({preventScroll:true}), 30);
+  }, {extras:false});
+}
+$('testNext').onclick = () => {
+  const finished = test.right >= 2 || test.q - test.right >= 2;   // 2 aciertos = pasa · 2 fallos = no pasa
+  if (!finished) return testQuestion();
+  if (test.right >= 2 && test.lvl < 5){ test.lvl++; test.q = 0; test.right = 0; return testQuestion(); }
+  testResult(test.right >= 2 ? 5 : test.lvl);
+};
+function testResult(level){
+  const host = $('testHost');
+  host.replaceChildren();
+  $('testNext').classList.remove('show');
+  $('testLabel').textContent = t('test_result');
+  const start = el('button', 'btn', t('test_start', {l:LEVELS[level]}));
+  const other = el('button', 'btn ghost', t('test_other'));
+  start.type = other.type = 'button';
+  start.onclick = () => { state.level = level; last = null; save(); updateHud(); go('study'); };
+  other.onclick = () => go(state.level === null ? 'onboard' : 'options');
+  host.append(el('div', 'bigtxt', LEVELS[level]), el('h2', '', t('lvl' + level)), el('p', 'small', t('lvd' + level)), start, other);
+  start.focus();
+}
+$('testCancel').onclick = () => go(state.level === null ? 'onboard' : 'options');
+
+/* ===================================================================
+   PANTALLA: OPCIONES
+   =================================================================== */
+function section(title, help, ...nodes){
+  const s = el('div', 'opt-section');
+  s.append(el('h3', '', title));
+  if (help) s.append(el('p', '', help));
+  s.append(...nodes);
+  return s;
+}
+function renderOptions(){
+  $('optTitle').textContent = t('options');
+  $('backOpt').textContent = t('back');
+  const L1 = LANGNAME[state.lang];
+  const body = $('optBody');
+
+  const themeSeg = segButtons([['auto', t('theme_auto')], ['light', t('theme_light')], ['dark', t('theme_dark')]], state.theme,
+    v => { state.theme = v; save(); applyTheme(); renderOptions(); });
+
+  const langs = segButtons(Object.keys(LANGNAME).map(k => [k, LANGNAME[k]]), state.lang,
+    v => { state.lang = v; save(); applyLang(); renderOptions(); });
+
+  const lvlChips = segButtons(LEVELS.map((c, i) => [i, c, t('lvl' + i)]), state.level,
+    v => { state.level = v; last = null; save(); updateHud(); renderOptions(); }, 'chips');
+  const testBtn = el('button', 'btn ghost sm', t('opt_level_test')); testBtn.type = 'button';
+  testBtn.style.marginTop = '10px'; testBtn.onclick = () => startTest();
+
+  const dirSeg = segButtons([['mixed', t('dir_mixed')], ['fr2l1', t('dir_fr2l1', {l:L1})], ['l12fr', t('dir_l12fr', {l:L1})]], state.dir,
+    v => { state.dir = v; save(); renderOptions(); });
+
+  const cats = el('div', 'stack');
+  CATS.forEach(c => {
+    const label = el('label', 'check'), cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = state.cats[c];
+    cb.onchange = () => {
+      if (!cb.checked && CATS.filter(x => state.cats[x]).length === 1){ cb.checked = true; return; }
+      state.cats[c] = cb.checked; save(); updateHud();
+    };
+    label.append(cb, document.createTextNode(t('cat_' + c)));
+    cats.append(label);
+  });
+
+  let soundNode;
+  if (TTS){
+    const label = el('label', 'check'), cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = state.sound;
+    cb.onchange = () => { state.sound = cb.checked; save(); if (cb.checked) speak('Bonjour !'); };
+    label.append(cb, document.createTextNode(t('opt_sound_auto')));
+    soundNode = label;
+  } else soundNode = el('p', '', t('opt_sound_none'));
+
+  const goalSeg = segButtons([10, 20, 30, 50].map(n => [n, String(n)]), state.goal,
+    v => { state.goal = v; save(); updateHud(); renderOptions(); }, 'chips four');
+
+  const cardsBtn = el('button', 'btn', t('opt_mycards_btn')); cardsBtn.type = 'button';
+  cardsBtn.onclick = () => go('cards');
+
+  const resetBtn = el('button', 'btn danger', t('reset')); resetBtn.type = 'button';
+  resetBtn.onclick = () => {
+    if (!confirm(t('reset_confirm'))) return;
+    state.cards = {}; state.stats = {days:{}}; state.level = null; state.maxShown = false;
+    correct = answered = streak = 0; last = null; hardPool = null;
+    save(); go('onboard');
+  };
+
+  body.replaceChildren(
+    section(t('opt_theme'), t('opt_theme_h'), themeSeg),
+    section(t('opt_lang'), t('opt_lang_h'), langs),
+    section(t('opt_level'), t('opt_level_h'), lvlChips, testBtn),
+    section(t('opt_dir'), t('opt_dir_h'), dirSeg),
+    section(t('opt_cats'), t('opt_cats_h'), cats),
+    section(t('opt_sound'), '', soundNode),
+    section(t('opt_goal'), t('opt_goal_h'), goalSeg),
+    section(t('opt_mycards'), t('opt_mycards_h'), cardsBtn),
+    section(t('opt_reset'), t('opt_reset_h'), resetBtn)
+  );
+}
+
+/* ===================================================================
+   PANTALLA: ESTADÍSTICAS
+   =================================================================== */
+function hardCards(){
+  return deck.filter(c => { const r = state.cards[c.fr]; return r && r.w > 0 && r.b < 3; })
+    .sort((a, b) => { const ra = rec(a), rb = rec(b); return (rb.w - rb.b) - (ra.w - ra.b) || rb.w - ra.w; })
+    .slice(0, 20);
+}
+function renderStats(){
+  $('statsTitle').textContent = t('stats');
+  $('backStats').textContent = t('back');
+  const days = state.stats.days;
+  let total = 0, oks = 0;
+  for (const k in days){ total += days[k].n; oks += days[k].ok; }
+  const seen = deck.filter(c => state.cards[c.fr] && state.cards[c.fr].n > 0).length;
+  const mastered = deck.filter(c => rec(c).b >= MASTER).length;
+  const kpi = (v, l) => { const d = el('div', 'kpi'); d.append(el('b', '', String(v)), el('span', '', l)); return d; };
+  const td = today();
+  const kpis = el('div', 'kpis');
+  kpis.append(kpi(`${td.n}/${state.goal}`, t('st_today')), kpi(dayStreak(), t('st_streak')), kpi(total ? Math.round(oks / total * 100) + '%' : '–', t('st_acc')),
+    kpi(total, t('st_total')), kpi(`${seen}/${deck.length}`, t('st_seen')), kpi(`${mastered}/${deck.length}`, t('st_mastered')));
+
+  const lv = el('div');
+  LEVELS.forEach((code, i) => {
+    const all = deck.filter(c => c.lvl === i), m = all.filter(c => rec(c).b >= MASTER).length;
+    const row = el('div', 'lrow'), bar = el('div', 'bar thin'), fill = el('div', 'bar-fill');
+    fill.style.width = (all.length ? m / all.length * 100 : 0) + '%'; fill.style.animation = 'none';
+    bar.append(fill);
+    row.append(el('span', '', code), bar, el('span', '', `${m}/${all.length}`));
+    lv.append(row);
+  });
+
+  const bars = el('div', 'bars');
+  const series = [];
+  for (let i = 13; i >= 0; i--){ const d = new Date(); d.setDate(d.getDate() - i); series.push([dayKey(d), (days[dayKey(d)] || {n:0}).n]); }
+  const max = Math.max(1, ...series.map(s => s[1]));
+  series.forEach(([k, n]) => { const b = el('div', n ? '' : 'zero'); b.style.height = Math.max(3, n / max * 100) + '%'; b.title = `${k}: ${n}`; bars.append(b); });
+
+  const hard = hardCards(), hardWrap = el('div', 'stack');
+  if (!hard.length) hardWrap.append(el('p', '', t('st_hard_empty')));
+  else {
+    const list = el('div', 'list');
+    hard.slice(0, 8).forEach(c => {
+      const it = el('div', 'item'), left = el('div');
+      left.append(document.createTextNode(c.fr), el('small', '', tr(c)));
+      it.append(left, el('span', 'cue', t('st_wrong', {n:rec(c).w})));
+      list.append(it);
+    });
+    const pb = el('button', 'btn', t('st_practice')); pb.type = 'button';
+    pb.onclick = () => { hardPool = hardCards(); last = null; go('study'); };
+    hardWrap.append(list, pb);
+  }
+  $('statsBody').replaceChildren(kpis, section(t('st_levels'), '', lv), section(t('st_last'), '', bars), section(t('st_hard'), '', hardWrap));
+}
+
+/* ===================================================================
+   PANTALLA: MIS CARTAS (alta manual + CSV)
+   =================================================================== */
+function toCSV(rows){
+  return rows.map(r => r.map(x => {
+    x = String(x == null ? '' : x);
+    return /[",\n\r]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x;
+  }).join(',')).join('\n');
+}
+function parseCSV(text){
+  const rows = []; let row = [], cur = '', q = false;
+  const endRow = () => { row.push(cur); cur = ''; if (row.some(x => x.trim() !== '')) rows.push(row); row = []; };
+  for (let i = 0; i < text.length; i++){
+    const ch = text[i];
+    if (q){ if (ch === '"'){ if (text[i + 1] === '"'){ cur += '"'; i++; } else q = false; } else cur += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === ',') { row.push(cur); cur = ''; }
+    else if (ch === '\n' || ch === '\r'){ if (ch === '\r' && text[i + 1] === '\n') i++; endRow(); }
+    else cur += ch;
+  }
+  endRow();
+  return rows;
+}
+function upsertCustom({lang, lvl, cat, fr, tx, note, ex, extr}){
+  fr = fr.trim(); tx = tx.trim();
+  if (!fr || !tx) return 'empty';
+  if (BASE.some(c => c.fr.toLowerCase() === fr.toLowerCase())) return 'exists';
+  let c = state.custom.find(x => x.fr.toLowerCase() === fr.toLowerCase());
+  if (!c){
+    c = {lvl, cat, fr, t:{}, n:null, ex:null};
+    state.custom.push(c);
+  }
+  c.t[lang] = tx;
+  if (note && note.trim()){ c.n = c.n || {}; c.n[lang] = note.trim(); }
+  if (ex && ex.trim()){ c.ex = c.ex || {f:ex.trim(), t:{}}; c.ex.f = ex.trim(); if (extr && extr.trim()) c.ex.t[lang] = extr.trim(); }
+  return 'ok';
+}
+function renderCards(){
+  $('cardsTitle').textContent = t('cards_title');
+  $('backCards').textContent = t('back');
+  const L = state.lang;
+
+  // formulario
+  const fld = (label, node) => { const d = el('label', 'field', label); d.append(node); return d; };
+  const sel = (items, val) => { const s = document.createElement('select'); items.forEach(([v, l]) => { const o = el('option', '', l); o.value = v; s.append(o); }); s.value = val; return s; };
+  const inp = ph => { const i = document.createElement('input'); i.type = 'text'; i.autocomplete = 'off'; if (ph) i.placeholder = ph; return i; };
+  const fLevel = sel(LEVELS.map((c, i) => [i, `${c} · ${t('lvl' + i)}`]), state.level == null ? 0 : state.level);
+  const fCat = sel(CATS.map(c => [c, t('cat_' + c)]), 'vocab');
+  const fFr = inp('le chat'), fTr = inp(), fNote = inp(), fEx = inp('Le [chat] dort.'), fExTr = inp();
+  const msg = el('div', 'msg'); msg.setAttribute('role', 'status');
+  const add = el('button', 'btn', t('f_add')); add.type = 'button';
+  add.onclick = () => {
+    const r = upsertCustom({lang:L, lvl:+fLevel.value, cat:fCat.value, fr:fFr.value, tx:fTr.value, note:fNote.value, ex:fEx.value, extr:fExTr.value});
+    if (r === 'ok'){ rebuildDeck(); save(); renderCards(); const m = $('cardsBody').querySelector('.msg'); m.textContent = t('f_added'); m.className = 'msg ok'; }
+    else { msg.textContent = t(r === 'exists' ? 'f_exists' : 'f_empty'); msg.className = 'msg bad'; }
+  };
+  const form = el('div', 'stack');
+  const two1 = el('div', 'two'); two1.append(fld(t('f_level'), fLevel), fld(t('f_cat'), fCat));
+  const two2 = el('div', 'two'); two2.append(fld(t('f_fr'), fFr), fld(t('f_tr', {l:LANGNAME[L]}), fTr));
+  form.append(two1, two2, fld(t('f_note'), fNote), fld(t('f_ex'), fEx), fld(t('f_extr'), fExTr), add, msg);
+
+  // lista
+  const list = el('div', 'list');
+  if (!state.custom.length) list.append(el('p', 'small', t('cards_none')));
+  state.custom.forEach((c, i) => {
+    const it = el('div', 'item'), left = el('div');
+    left.append(document.createTextNode(c.fr), el('small', '', `${LEVELS[c.lvl]} · ${t('cat_' + c.cat)} · ${pickL(c.t)}`));
+    const del = el('button', 'btn danger sm', t('delete')); del.type = 'button';
+    del.onclick = () => { delete state.cards[c.fr]; state.custom.splice(i, 1); rebuildDeck(); save(); renderCards(); };
+    it.append(left, del); list.append(it);
+  });
+
+  // CSV
+  const ta = document.createElement('textarea'); ta.placeholder = t('csv_paste'); ta.setAttribute('aria-label', t('csv_title'));
+  const file = document.createElement('input'); file.type = 'file'; file.accept = '.csv,text/csv,text/plain';
+  file.onchange = () => { const f = file.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { ta.value = String(r.result); }; r.readAsText(f); };
+  const csvMsg = el('div', 'msg'); csvMsg.setAttribute('role', 'status');
+  const exp = el('button', 'btn ghost', t('csv_export')); exp.type = 'button';
+  exp.onclick = () => {
+    const rows = [['lang', 'level', 'category', 'french', 'translation', 'note', 'sentence', 'sentence_translation']];
+    state.custom.forEach(c => {
+      Object.keys(c.t).forEach(lg => rows.push([lg, LEVELS[c.lvl], c.cat, c.fr, c.t[lg], (c.n && c.n[lg]) || '', c.ex ? c.ex.f : '', (c.ex && c.ex.t[lg]) || '']));
+    });
+    const blob = new Blob(['﻿' + toCSV(rows)], {type:'text/csv;charset=utf-8'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'mis-cartas.csv';
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+  const imp = el('button', 'btn', t('csv_import')); imp.type = 'button';
+  imp.onclick = () => {
+    let n = 0;
+    parseCSV(ta.value).forEach((r, idx) => {
+      if (idx === 0 && /^(lang|idioma|llengua)/i.test(r[0].trim())) return;
+      const lang = STR.options[(r[0] || '').trim().toLowerCase()] ? r[0].trim().toLowerCase() : state.lang;
+      let lvl = LEVELS.indexOf((r[1] || '').trim().toUpperCase()); if (lvl < 0) lvl = Math.min(5, Math.max(0, parseInt(r[1], 10) || 0));
+      const cat = CATS.includes((r[2] || '').trim()) ? r[2].trim() : 'vocab';
+      if (upsertCustom({lang, lvl, cat, fr:r[3] || '', tx:r[4] || '', note:r[5], ex:r[6], extr:r[7]}) === 'ok') n++;
+    });
+    if (n){ rebuildDeck(); save(); renderCards(); const m = $('cardsBody').querySelectorAll('.msg')[1]; m.textContent = t('csv_done', {n}); m.className = 'msg ok'; }
+    else { csvMsg.textContent = t('csv_err'); csvMsg.className = 'msg bad'; }
+  };
+  const csvRow = el('div', 'row'); csvRow.style.maxWidth = 'none'; csvRow.append(exp, imp);
+  const csvBox = el('div', 'stack'); csvBox.append(ta, file, csvRow, csvMsg);
+
+  $('cardsBody').replaceChildren(section(t('cards_add'), '', form), section(t('cards_list', {n:state.custom.length}), '', list), section(t('csv_title'), t('csv_help'), csvBox));
+}
+
+/* ===================================================================
+   NAVEGACIÓN, TEMA E IDIOMA
+   =================================================================== */
+const SCREENS = ['onboard', 'test', 'study', 'options', 'stats', 'cards'];
+function go(screen){
+  SCREENS.forEach(s => $('screen' + s[0].toUpperCase() + s.slice(1)).hidden = s !== screen);
+  const bare = screen === 'onboard' || screen === 'test';
+  $('hud').style.visibility = bare ? 'hidden' : 'visible';
+  if (screen === 'onboard') renderOnboard();
+  if (screen === 'options') renderOptions();
+  if (screen === 'stats') renderStats();
+  if (screen === 'cards') renderCards();
+  if (screen === 'study'){ updateHud(); renderCard(); }
+  window.scrollTo({top:0});
+}
+$('gearBtn').onclick = () => go('options');
+$('statsBtn').onclick = () => go('stats');
+$('levelBadge').onclick = () => go('options');
+$('backOpt').onclick = () => go('study');
+$('backStats').onclick = () => go('study');
+$('backCards').onclick = () => go('options');
+
+function applyTheme(){
+  if (state.theme === 'auto') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', state.theme);
+}
+function applyLang(){
+  document.documentElement.lang = state.lang;
+  $('gearBtn').setAttribute('aria-label', t('options')); $('gearBtn').title = t('options');
+  $('statsBtn').setAttribute('aria-label', t('stats')); $('statsBtn').title = t('stats');
+  $('levelBadge').setAttribute('aria-label', `${t('level')} ${state.level == null ? '' : LEVELS[state.level]}`);
+  updateHud();
+}
+
+/* ---------- atajos de teclado ---------- */
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === 'Escape'){
+    if (!$('conjModal').hidden) closeConj();
+    else if (!$('levelUp').hidden) $('luBtn').click();
+    return;
+  }
+  if (!$('conjModal').hidden || !$('levelUp').hidden) return;
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+  const inStudy = !$('screenStudy').hidden, inTest = !$('screenTest').hidden;
+  if (!inStudy && !inTest) return;
+  const root = inStudy ? $('cardBody') : $('testHost');
+  const nb = inStudy ? nextBtn : $('testNext');
+  if (/^[1-4]$/.test(e.key)){
+    const opt = root.querySelectorAll('.opt-btn:not(:disabled)')[0] ? root.querySelectorAll('.opt-btn')[+e.key - 1] : null;
+    if (opt && !opt.disabled){ opt.click(); e.preventDefault(); return; }
+    const back = root.querySelector('.flip-card.flipped');
+    if (back && inStudy){
+      const btns = root.querySelectorAll('.row .btn');   // 1 = no lo sabía · 2 = lo sabía
+      if (btns[+e.key - 1] && !btns[+e.key - 1].disabled){ btns[+e.key - 1].click(); e.preventDefault(); }
+    }
+    return;
+  }
+  if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight'){
+    if (tag === 'button') return;   // el botón enfocado ya actúa solo
+    if (nb.classList.contains('show')){ nb.click(); e.preventDefault(); return; }
+    const hint = root.querySelector('.flip-hint');
+    if (hint && !root.querySelector('.flip-card.flipped')){ hint.click(); e.preventDefault(); }
+  }
+});
+
+/* ---------- arranque ---------- */
+applyTheme();
+applyLang();
+go(state.level === null ? 'onboard' : 'study');
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
