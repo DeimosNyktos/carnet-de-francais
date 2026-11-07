@@ -5,7 +5,7 @@ A free, offline-friendly web app to learn French with **spaced repetition**, **C
 <!-- TODO: add 2–3 screenshots in docs/ and link them here, e.g.
 ![Study screen](docs/study.png) -->
 
-**Live demo:** <!-- TODO: https://<your-username>.github.io/carnet-de-francais/ -->
+**Live demo:** https://deimosnyktos.github.io/carnet-de-francais/
 
 ## Features
 
