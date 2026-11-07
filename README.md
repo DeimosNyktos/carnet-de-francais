@@ -74,4 +74,4 @@ Stack: vanilla HTML, CSS and JavaScript.
 
 ## License
 
-<!-- TODO: choose a license (MIT is a common choice for small projects) and add a LICENSE file. -->
+[MIT](LICENSE) © 2026 Deimos
