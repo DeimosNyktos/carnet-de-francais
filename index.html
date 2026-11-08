@@ -534,6 +534,7 @@ S('opt_cats_h','Com a mínim una categoria.','Mínimo una categoría.','At least
 S('opt_sound','Pronunciació','Pronunciación','Pronunciation');
 S('opt_sound_auto','Reproduir la veu automàticament','Reproducir la voz automáticamente','Play the voice automatically');
 S('opt_sound_none','El teu navegador no admet síntesi de veu.','Tu navegador no admite síntesis de voz.','Your browser has no speech synthesis.');
+S('no_fr_voice','No hi ha cap veu francesa instal·lada en aquest dispositiu.','No hay ninguna voz francesa instalada en este dispositivo.','No French voice is installed on this device.');
 S('opt_goal','Objectiu diari','Objetivo diario','Daily goal');
 S('opt_goal_h','Respostes per dia.','Respuestas por día.','Answers per day.');
 S('opt_mycards','Les meves cartes','Mis cartas','My cards');
@@ -866,19 +867,79 @@ function grade(c, ok){
    VOZ (síntesis del navegador)
    =================================================================== */
 const TTS = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
-function speak(text){
+const HAS_AUDIO = typeof Audio !== 'undefined';
+const CAN_SPEAK = TTS || HAS_AUDIO;
+
+// Audios pregrabados: audio/<hash>.wav, con voz francesa neuronal generada con Piper (ver tools/).
+// El nombre se calcula igual que en tools/generate_audio.py: FNV-1a de 32 bits del texto en UTF-8.
+function audioName(text){
+  let h = 0x811c9dc5;
+  for (const b of new TextEncoder().encode(text)){ h ^= b; h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(16).padStart(8, '0') + '.wav';
+}
+let currentAudio = null;
+function stopSpeaking(){
+  if (currentAudio){ try { currentAudio.pause(); } catch(e) {} currentAudio = null; }
+  if (TTS){ try { speechSynthesis.cancel(); } catch(e) {} }
+}
+
+// Las voces del sistema solo se usan como respaldo (cartas propias o audio no disponible).
+// Se cargan de forma asíncrona (Chrome/Edge devuelven [] en la
+// primera llamada). Sin voz explícita, el navegador usa la voz por defecto
+// del sistema (española) aunque u.lang sea 'fr-FR'.
+let frVoice = null;
+function pickFrenchVoice(){
+  const norm = l => (l || '').toLowerCase().replace('_', '-');
+  const fr = speechSynthesis.getVoices().filter(v => norm(v.lang).startsWith('fr'));
+  if (!fr.length) return null;
+  const score = v => {
+    let s = 0;
+    if (norm(v.lang) === 'fr-fr') s += 4;
+    if (/natural|online|neural|premium|enhanced/i.test(v.name)) s += 3;
+    if (/google/i.test(v.name)) s += 2;
+    if (v.localService === false) s += 1;
+    return s;
+  };
+  return fr.sort((a, b) => score(b) - score(a))[0];
+}
+if (TTS) {
+  frVoice = pickFrenchVoice();
+  speechSynthesis.addEventListener?.('voiceschanged', () => { frVoice = pickFrenchVoice(); });
+}
+let warnedNoVoice = false;
+function speakWithSystemVoice(text){
   if (!TTS) return;
   try {
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text.replace(/[\[\]]/g, ''));
-    u.lang = 'fr-FR'; u.rate = 0.9;
-    const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith('fr'));
-    if (v) u.voice = v;
+    if (!frVoice) frVoice = pickFrenchVoice();
+    if (!frVoice){
+      // Sin voz francesa, el navegador leería el francés con la voz española: mejor avisar.
+      if (!warnedNoVoice){ warnedNoVoice = true; toast(t('no_fr_voice')); }
+      return;
+    }
+    const u = new SpeechSynthesisUtterance(text);
+    u.voice = frVoice; u.lang = frVoice.lang; u.rate = 0.9;
     speechSynthesis.speak(u);
   } catch(e) {}
 }
+function speak(text){
+  text = text.replace(/[\[\]]/g, '').trim();
+  stopSpeaking();
+  if (!text) return;
+  if (HAS_AUDIO){
+    try {
+      const a = new Audio('audio/' + audioName(text));
+      currentAudio = a;
+      // si el archivo no existe o no se puede reproducir, se usa la voz del sistema
+      a.addEventListener('error', () => { if (currentAudio === a){ currentAudio = null; speakWithSystemVoice(text); } }, {once:true});
+      const p = a.play();
+      if (p && p.catch) p.catch(() => {});
+      return;
+    } catch(e) {}
+  }
+  speakWithSystemVoice(text);
+}
 function speakBtn(text){
-  if (!TTS) return document.createComment('');
+  if (!CAN_SPEAK) return document.createComment('');
   const b = el('button', 'speak', '🔊');
   b.type = 'button'; b.setAttribute('aria-label', t('speak'));
   b.onclick = e => { e.stopPropagation(); speak(text); };
@@ -1355,10 +1416,10 @@ function renderOptions(){
   });
 
   let soundNode;
-  if (TTS){
+  if (CAN_SPEAK){
     const label = el('label', 'check'), cb = document.createElement('input');
     cb.type = 'checkbox'; cb.checked = state.sound;
-    cb.onchange = () => { state.sound = cb.checked; save(); if (cb.checked) speak('Bonjour !'); };
+    cb.onchange = () => { state.sound = cb.checked; save(); if (cb.checked) speak('le chat'); };
     label.append(cb, document.createTextNode(t('opt_sound_auto')));
     soundNode = label;
   } else soundNode = el('p', '', t('opt_sound_none'));

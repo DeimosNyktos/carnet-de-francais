@@ -1,10 +1,19 @@
 // Service worker: permite instalar la app y usarla sin conexión.
 // Sube el número de versión cuando cambies archivos para forzar la actualización de la caché.
-const CACHE = 'carnet-fr-v1';
+const CACHE = 'carnet-fr-v2';
 const ASSETS = ['./', './index.html','./manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE).then(async c => {
+      await c.addAll(ASSETS);
+      // Audios de pronunciación: si algo falla aquí no pasa nada, se guardan al reproducirlos.
+      try {
+        const list = await (await fetch('./audio/index.json')).json();
+        await Promise.all(list.map(f => c.add('./audio/' + f).catch(() => {})));
+      } catch (err) {}
+    }).then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', e => {
